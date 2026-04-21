@@ -6,6 +6,8 @@
     <title>PortWeb — App</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
@@ -293,8 +295,8 @@
                     <div class="bg-white border border-slate-100 rounded-xl p-5">
                         <h3 class="font-semibold text-sm mb-4">Configurar ruta</h3>
                         <div class="space-y-4">
-                            <div><label class="block text-xs text-slate-500 mb-1">Origen</label><input type="text" value="Polígono Industrial Sur, Valencia" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white"></div>
-                            <div><label class="block text-xs text-slate-500 mb-1">Destino</label><input type="text" value="Terminal Norte, Puerto de Valencia" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white"></div>
+                            <div><label class="block text-xs text-slate-500 mb-1">Origen</label><input type="text" value="Polígono Cabezo Beaza, Cartagena" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white"></div>
+                            <div><label class="block text-xs text-slate-500 mb-1">Destino</label><input type="text" value="Terminal Escombreras, Puerto de Cartagena" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white"></div>
                             <div class="grid grid-cols-2 gap-3">
                                 <div><label class="block text-xs text-slate-500 mb-1">Hora salida</label><input type="time" value="07:30" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white"></div>
                                 <div><label class="block text-xs text-slate-500 mb-1">Tipo vehículo</label><select class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white"><option>Trailer 20'</option><option>Trailer 40'</option><option>Camión rígido</option></select></div>
@@ -303,10 +305,7 @@
                         </div>
                     </div>
                     <div class="bg-white border border-slate-100 rounded-xl overflow-hidden">
-                        <div class="h-64 bg-slate-100 relative">
-                            <img src="https://picsum.photos/seed/route-map-valencia/800/400.jpg" class="w-full h-full object-cover opacity-60">
-                            <div class="absolute inset-0 flex items-center justify-center"><div class="bg-white/90 backdrop-blur-sm rounded-xl p-4 shadow-lg text-center"><i data-lucide="map" class="w-8 h-8 text-brand-500 mx-auto mb-2"></i><p class="text-xs text-slate-500">Mapa de ruta</p></div></div>
-                        </div>
+                        <div id="routeMap" class="h-80 w-full z-0"></div>
                         <div class="p-5">
                             <h3 class="font-semibold text-sm mb-3">Resultado de la optimización</h3>
                             <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-100 mb-3"><span class="text-sm text-green-700 font-medium">Ruta óptima encontrada</span><i data-lucide="check-circle" class="w-4 h-4 text-green-500"></i></div>
@@ -321,9 +320,9 @@
                 <div class="bg-white border border-slate-100 rounded-xl p-5">
                     <h3 class="font-semibold text-sm mb-4">Condiciones del tráfico</h3>
                     <div class="grid sm:grid-cols-3 gap-4">
-                        <div class="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-100"><div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center"><i data-lucide="check" class="w-4 h-4 text-green-600"></i></div><div><p class="text-sm font-medium">V-30</p><p class="text-xs text-green-600">Fluido</p></div></div>
-                        <div class="flex items-center gap-3 p-3 bg-amber-50 rounded-lg border border-amber-100"><div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center"><i data-lucide="alert-triangle" class="w-4 h-4 text-amber-600"></i></div><div><p class="text-sm font-medium">Acceso puerto</p><p class="text-xs text-amber-600">Moderado</p></div></div>
-                        <div class="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-100"><div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center"><i data-lucide="check" class="w-4 h-4 text-green-600"></i></div><div><p class="text-sm font-medium">V-31</p><p class="text-xs text-green-600">Fluido</p></div></div>
+                        <div class="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-100"><div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center"><i data-lucide="check" class="w-4 h-4 text-green-600"></i></div><div><p class="text-sm font-medium">CT-32</p><p class="text-xs text-green-600">Fluido</p></div></div>
+                        <div class="flex items-center gap-3 p-3 bg-amber-50 rounded-lg border border-amber-100"><div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center"><i data-lucide="alert-triangle" class="w-4 h-4 text-amber-600"></i></div><div><p class="text-sm font-medium">Acceso Escombreras</p><p class="text-xs text-amber-600">Moderado</p></div></div>
+                        <div class="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-100"><div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center"><i data-lucide="check" class="w-4 h-4 text-green-600"></i></div><div><p class="text-sm font-medium">N-332</p><p class="text-xs text-green-600">Fluido</p></div></div>
                     </div>
                 </div>
             </div>
@@ -755,7 +754,71 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelect
 function addVehicle(e){e.preventDefault();closeModal('vehicleModal');fleet.unshift({plate:e.target[0].value,type:e.target[1].value,driver:e.target[2].value,status:'disponible',last:'Nunca'});renderAll();lucide.createIcons();showToast('Vehículo añadido');e.target.reset();}
 function addUser(e){e.preventDefault();closeModal('userModal');users.unshift({name:e.target[0].value,email:e.target[1].value,role:e.target[2].value,status:'activo',last:'Nunca'});renderAll();lucide.createIcons();showToast('Invitación enviada');e.target.reset();}
 function searchContainer(){showToast('Rastreando contenedor...');}
-function optimizeRoute(){showToast('Calculando ruta óptima con IA...');}
+function optimizeRoute(){
+    showToast('Calculando ruta óptima con IA...');
+    setTimeout(initRouteMap, 800);
+}
+
+let routeMapInitialized = false;
+function initRouteMap(){
+    if(routeMapInitialized) return;
+    routeMapInitialized = true;
+
+    const map = L.map('routeMap',{zoomControl:false}).setView([37.6050, -0.9850], 13);
+    L.control.zoom({position:'topright'}).addTo(map);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+        attribution:'© OpenStreetMap'
+    }).addTo(map);
+
+    // Origen — Polígono Cabezo Beaza
+    const origin = L.marker([37.6210, -1.0080]).addTo(map);
+    origin.bindPopup('<b>📝 Origen</b><br>Polígono Cabezo Beaza, Cartagena').openPopup();
+
+    // Destino — Terminal Escombreras
+    const dest = L.marker([37.5780, -0.9570]).addTo(map);
+    dest.bindPopup('<b>📍 Destino</b><br>Terminal Escombreras, Puerto de Cartagena');
+
+    // Ruta por la CT-32 → N-332 → Acceso Escombreras
+    const routeCoords = [
+        [37.6210, -1.0080],
+        [37.6195, -1.0030],
+        [37.6180, -0.9980],
+        [37.6160, -0.9940],
+        [37.6135, -0.9900],
+        [37.6105, -0.9870],
+        [37.6070, -0.9840],
+        [37.6040, -0.9820],
+        [37.6010, -0.9790],
+        [37.5980, -0.9765],
+        [37.5950, -0.9740],
+        [37.5920, -0.9710],
+        [37.5890, -0.9680],
+        [37.5860, -0.9650],
+        [37.5830, -0.9620],
+        [37.5800, -0.9590],
+        [37.5780, -0.9570]
+    ];
+
+    // Sombra de la ruta
+    L.polyline(routeCoords, {
+        color:'#f97316', weight:9, opacity:0.15,
+        lineCap:'round', lineJoin:'round'
+    }).addTo(map);
+
+    // Línea principal punteada
+    L.polyline(routeCoords, {
+        color:'#f97316', weight:4, opacity:0.85, dashArray:'10, 8',
+        lineCap:'round', lineJoin:'round'
+    }).addTo(map);
+
+    // Punto medio — intermedio
+    L.circleMarker([37.5990, -0.9785], {
+        radius:5, color:'#f97316', fillColor:'#fff', fillOpacity:1, weight:2
+    }).addTo(map).bindPopup('<b>🔄 Punto intermedio</b><br>Enlace CT-32 / N-332');
+
+    map.fitBounds(L.latLngBounds(routeCoords), {padding:[40,40]});
+}
 function showToast(msg){const t=document.getElementById('toast');document.getElementById('toastMsg').textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3500);}
 
 // ====== INIT ======
