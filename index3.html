@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PortWeb — App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        brand: { 50:'#fff7ed',100:'#ffedd5',200:'#fed7aa',300:'#fdba74',400:'#fb923c',500:'#f97316',600:'#ea580c',700:'#c2410c',800:'#9a3412',900:'#7c2d12',950:'#431407' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:#f1f5f9}::-webkit-scrollbar-thumb{background:#f97316;border-radius:4px}
+        .sidebar-link{transition:all .2s ease}.sidebar-link:hover,.sidebar-link.active{background:rgba(249,115,22,.1);color:#ea580c}
+        .sidebar-link.active{border-right:3px solid #f97316}
+        .stat-card{transition:all .3s ease}.stat-card:hover{transform:translateY(-2px);box-shadow:0 10px 25px -5px rgba(249,115,22,.12)}
+        .page{display:none}.page.active{display:block}
+        .turn-slot{transition:all .2s ease;cursor:pointer}.turn-slot:hover:not(.occupied){background:#fff7ed;border-color:#fb923c}
+        .turn-slot.occupied{background:#f1f5f9;opacity:.5;cursor:not-allowed}.turn-slot.selected{background:#f97316;color:white;border-color:#f97316}
+        .timeline-dot{position:relative}.timeline-dot::after{content:'';position:absolute;left:15px;top:100%;width:2px;height:calc(100% + 8px);background:#e2e8f0}.timeline-dot:last-child::after{display:none}
+        .toast{position:fixed;bottom:24px;right:24px;z-index:9999;padding:14px 22px;border-radius:12px;background:#1e293b;color:white;font-size:13px;transform:translateY(100px);opacity:0;transition:all .4s cubic-bezier(.16,1,.3,1)}
+        .toast.show{transform:translateY(0);opacity:1}
+        .modal-bg{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.4);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s}
+        .modal-bg.active{opacity:1;pointer-events:all}
+        .modal-box{background:white;border-radius:20px;padding:32px;max-width:520px;width:92%;transform:scale(.9);transition:transform .3s;box-shadow:0 25px 50px -12px rgba(0,0,0,.15)}
+        .modal-bg.active .modal-box{transform:scale(1)}
+        .badge{display:inline-flex;align-items:center;padding:2px 10px;border-radius:9999px;font-size:11px;font-weight:600}
+        input:focus,select:focus,textarea:focus{outline:none;border-color:#f97316;box-shadow:0 0 0 3px rgba(249,115,22,.15)}
+        .mobile-sidebar{transform:translateX(-100%);transition:transform .3s ease}.mobile-sidebar.open{transform:translateX(0)}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+        .fade-in{animation:fadeIn .4s ease forwards}
+        .role-card{transition:all .3s ease;cursor:pointer}.role-card:hover{transform:translateY(-4px);box-shadow:0 12px 30px -8px rgba(249,115,22,.2)}
+        .role-card.selected{border-color:#f97316;box-shadow:0 0 0 3px rgba(249,115,22,.2)}
+        .restricted{background:repeating-linear-gradient(45deg,transparent,transparent 10px,rgba(249,115,22,.03) 10px,rgba(249,115,22,.03) 20px);position:relative}
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans antialiased">
+
+<div id="toast" class="toast"><div class="flex items-center gap-2"><i data-lucide="check-circle" class="w-4 h-4 text-brand-400"></i><span id="toastMsg"></span></div></div>
+
+<!-- ==================== LOGIN ==================== -->
+<div id="loginPage" class="min-h-screen flex">
+    <div class="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-brand-500 to-brand-700 relative overflow-hidden items-center justify-center">
+        <div class="absolute inset-0 opacity-10"><img src="https://picsum.photos/seed/port-aerial/1200/900.jpg" class="w-full h-full object-cover"></div>
+        <div class="absolute top-20 left-20 w-40 h-40 border border-white/20 rounded-full animate-[spin_10s_linear_infinite]"></div>
+        <div class="absolute bottom-20 right-20 w-60 h-60 border border-white/10 rounded-full animate-[spin_15s_linear_infinite_reverse]"></div>
+        <div class="relative z-10 text-center px-12 text-white">
+            <div class="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-8 backdrop-blur-sm"><i data-lucide="anchor" class="w-10 h-10"></i></div>
+            <h1 class="text-4xl font-bold mb-4">PortWeb</h1>
+            <p class="text-lg text-white/80 font-light">Gestión inteligente para el ecosistema portuario</p>
+            <div class="mt-10 grid grid-cols-3 gap-6 text-center">
+                <div><p class="text-3xl font-bold">1.2K</p><p class="text-xs text-white/60 mt-1">Turnos/día</p></div>
+                <div><p class="text-3xl font-bold">45%</p><p class="text-xs text-white/60 mt-1">Menos espera</p></div>
+                <div><p class="text-3xl font-bold">98%</p><p class="text-xs text-white/60 mt-1">Satisfacción</p></div>
+            </div>
+        </div>
+    </div>
+    <div class="w-full lg:w-1/2 flex items-center justify-center p-8">
+        <div class="max-w-md w-full">
+            <div class="lg:hidden flex items-center gap-3 mb-8">
+                <div class="w-10 h-10 bg-brand-500 rounded-xl flex items-center justify-center"><i data-lucide="anchor" class="w-5 h-5 text-white"></i></div>
+                <span class="text-xl font-bold">Port<span class="text-brand-500">Web</span></span>
+            </div>
+            <h2 class="text-2xl font-bold mb-2">Iniciar sesión</h2>
+            <p class="text-slate-500 mb-6">Selecciona tu perfil y accede a PortWeb</p>
+
+            <!-- Role selector -->
+            <div class="grid grid-cols-3 gap-3 mb-6">
+                <div onclick="selectRole('admin')" class="role-card selected border-2 border-brand-500 rounded-xl p-3 text-center bg-white" data-role="admin">
+                    <div class="w-10 h-10 bg-brand-50 rounded-lg flex items-center justify-center mx-auto mb-2"><i data-lucide="shield" class="w-5 h-5 text-brand-500"></i></div>
+                    <p class="text-xs font-semibold">Admin</p>
+                    <p class="text-[10px] text-slate-400">Acceso total</p>
+                </div>
+                <div onclick="selectRole('conductor')" class="role-card border-2 border-slate-200 rounded-xl p-3 text-center bg-white" data-role="conductor">
+                    <div class="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center mx-auto mb-2"><i data-lucide="truck" class="w-5 h-5 text-blue-500"></i></div>
+                    <p class="text-xs font-semibold">Conductor</p>
+                    <p class="text-[10px] text-slate-400">Mi operación</p>
+                </div>
+                <div onclick="selectRole('operador')" class="role-card border-2 border-slate-200 rounded-xl p-3 text-center bg-white" data-role="operador">
+                    <div class="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center mx-auto mb-2"><i data-lucide="clipboard-list" class="w-5 h-5 text-green-500"></i></div>
+                    <p class="text-xs font-semibold">Operador</p>
+                    <p class="text-[10px] text-slate-400">Gestión terminal</p>
+                </div>
+            </div>
+
+            <form onsubmit="doLogin(event)" class="space-y-4">
+                <div id="loginEmailWrap">
+                    <label class="block text-sm font-medium text-slate-700 mb-1.5">Correo electrónico</label>
+                    <input type="email" id="loginEmail" required class="w-full border border-slate-200 rounded-xl px-4 py-3 bg-white text-sm" placeholder="usuario@empresa.com">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1.5">Contraseña</label>
+                    <input type="password" required value="password" class="w-full border border-slate-200 rounded-xl px-4 py-3 bg-white text-sm" placeholder="••••••••">
+                </div>
+                <div class="flex items-center justify-between">
+                    <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer"><input type="checkbox" checked class="accent-brand-500 w-4 h-4">Recordarme</label>
+                    <a href="#" onclick="event.preventDefault();showToast('Enlace de recuperación enviado')" class="text-sm text-brand-600 hover:text-brand-700 font-medium">¿Olvidaste tu contraseña?</a>
+                </div>
+                <button type="submit" class="w-full bg-brand-500 hover:bg-brand-600 text-white font-semibold py-3 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-brand-500/25">Acceder</button>
+            </form>
+            <div class="mt-4 p-3 bg-brand-50 rounded-xl border border-brand-100">
+                <p class="text-[11px] text-brand-700 font-medium mb-1">Cuentas de prueba:</p>
+                <p class="text-[11px] text-brand-600">Admin: admin@porttech.io</p>
+                <p class="text-[11px] text-brand-600">Conductor: carlos@transportes.com</p>
+                <p class="text-[11px] text-brand-600">Operador: antonio@logistica.es</p>
+            </div>
+            <p class="text-center text-sm text-slate-400 mt-6">Informática y Comercio Electrónico — C. Torres Vega</p>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== APP ==================== -->
+<div id="appShell" class="hidden min-h-screen flex">
+    <div id="sidebarOverlay" class="fixed inset-0 bg-black/30 z-40 hidden lg:hidden" onclick="toggleSidebar()"></div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="fixed lg:static z-50 w-64 h-screen bg-white border-r border-slate-200 flex flex-col mobile-sidebar lg:!transform-none">
+        <div class="h-16 flex items-center gap-3 px-5 border-b border-slate-100 flex-shrink-0">
+            <div class="w-9 h-9 bg-brand-500 rounded-xl flex items-center justify-center"><i data-lucide="anchor" class="w-5 h-5 text-white"></i></div>
+            <span class="font-bold text-lg">Port<span class="text-brand-500">Web</span></span>
+        </div>
+        <!-- Role badge -->
+        <div class="px-5 py-3 border-b border-slate-100 flex-shrink-0">
+            <span id="roleBadge" class="badge bg-brand-50 text-brand-700 text-xs w-full justify-center py-1.5"></span>
+        </div>
+        <nav id="sidebarNav" class="flex-1 py-4 px-3 space-y-1 overflow-y-auto"></nav>
+        <div class="p-4 border-t border-slate-100 flex-shrink-0">
+            <div class="flex items-center gap-3">
+                <div id="userAvatar" class="w-9 h-9 rounded-full flex items-center justify-center font-semibold text-sm"></div>
+                <div class="flex-1 min-w-0">
+                    <p id="userName" class="text-sm font-medium truncate"></p>
+                    <p id="userEmail" class="text-xs text-slate-400 truncate"></p>
+                </div>
+                <button onclick="doLogout()" class="text-slate-400 hover:text-red-500 transition-colors" title="Cerrar sesión"><i data-lucide="log-out" class="w-4 h-4"></i></button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main -->
+    <div class="flex-1 flex flex-col min-h-screen min-w-0">
+        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 lg:px-6 flex-shrink-0">
+            <div class="flex items-center gap-3">
+                <button onclick="toggleSidebar()" class="lg:hidden text-slate-500 hover:text-slate-700"><i data-lucide="menu" class="w-5 h-5"></i></button>
+                <h1 id="pageTitle" class="text-lg font-semibold">Dashboard</h1>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="relative hidden sm:block">
+                    <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                    <input type="text" placeholder="Buscar..." class="pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 w-48 focus:bg-white">
+                </div>
+                <button onclick="showToast('Sin notificaciones nuevas')" class="relative w-9 h-9 flex items-center justify-center rounded-lg hover:bg-slate-100 transition-colors text-slate-500">
+                    <i data-lucide="bell" class="w-[18px] h-[18px]"></i>
+                    <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-brand-500 rounded-full"></span>
+                </button>
+                <div id="headerAvatar" class="w-9 h-9 rounded-full flex items-center justify-center font-semibold text-sm cursor-pointer"></div>
+            </div>
+        </header>
+
+        <main class="flex-1 p-4 lg:p-6 overflow-y-auto">
+
+            <!-- ===== DASHBOARD ===== -->
+            <div id="page-dashboard" class="page active fade-in">
+                <div id="dashStats" class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"></div>
+                <div id="dashCharts" class="grid lg:grid-cols-3 gap-6 mb-6"></div>
+                <div class="bg-white border border-slate-100 rounded-xl p-5">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-semibold text-sm" id="actTitle">Actividad reciente</h3>
+                    </div>
+                    <div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="border-b border-slate-100">
+                        <th class="text-left py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">ID</th>
+                        <th class="text-left py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">Vehículo</th>
+                        <th class="text-left py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">Conductor</th>
+                        <th class="text-left py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">Terminal</th>
+                        <th class="text-left py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">Turno</th>
+                        <th class="text-left py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">Estado</th>
+                    </tr></thead><tbody id="actTable"></tbody></table></div>
+                </div>
+            </div>
+
+            <!-- ===== TURNOS ===== -->
+            <div id="page-turnos" class="page fade-in">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                    <p class="text-sm text-slate-500" id="turnsDesc">Selecciona fecha y horario para tu turno de acceso al puerto.</p>
+                    <div class="flex items-center gap-3">
+                        <input type="date" id="turnDate" class="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white" onchange="renderTurnSlots()">
+                        <select id="turnTerminal" class="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white">
+                            <option>Terminal Norte</option><option>Terminal Sur</option><option>Terminal Este</option><option>Terminal Oeste</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="bg-white border border-slate-100 rounded-xl p-5 mb-6">
+                    <h3 class="font-semibold text-sm mb-1">Horarios disponibles</h3>
+                    <p class="text-xs text-slate-400 mb-4">Haz clic en un horario libre para seleccionarlo</p>
+                    <div id="turnGrid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3"></div>
+                </div>
+                <div id="turnFormWrap" class="hidden bg-white border border-slate-100 rounded-xl p-5 mb-6">
+                    <h3 class="font-semibold text-sm mb-4">Confirmar reserva</h3>
+                    <div class="grid sm:grid-cols-2 gap-4 mb-4">
+                        <div id="turnVehicleWrap"><label class="block text-xs text-slate-500 mb-1">Matrícula del vehículo</label>
+                            <select id="turnVehicle" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white"></select></div>
+                        <div id="turnDriverWrap"><label class="block text-xs text-slate-500 mb-1">Conductor</label>
+                            <select id="turnDriver" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white"></select></div>
+                        <div><label class="block text-xs text-slate-500 mb-1">Tipo de carga</label>
+                            <select class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white"><option>Contenedor 20'</option><option>Contenedor 40'</option><option>Carga suelta</option><option>Peligrosa</option></select></div>
+                        <div><label class="block text-xs text-slate-500 mb-1">Nº Contenedor</label>
+                            <input type="text" placeholder="MSKU-1234567" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white"></div>
+                    </div>
+                    <div class="flex gap-3">
+                        <button onclick="confirmTurno()" class="bg-brand-500 hover:bg-brand-600 text-white font-semibold text-sm px-6 py-2.5 rounded-lg transition-all hover:scale-[1.02] active:scale-[0.98]">Confirmar turno</button>
+                        <button onclick="cancelTurno()" class="border border-slate-200 text-slate-600 font-medium text-sm px-6 py-2.5 rounded-lg hover:bg-slate-50 transition-all">Cancelar</button>
+                    </div>
+                </div>
+                <div class="bg-white border border-slate-100 rounded-xl p-5">
+                    <h3 class="font-semibold text-sm mb-4" id="myTurnsTitle">Mis turnos reservados</h3>
+                    <div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="border-b border-slate-100">
+                        <th class="text-left py-3 text-xs font-medium text-slate-400 uppercase">Referencia</th>
+                        <th class="text-left py-3 text-xs font-medium text-slate-400 uppercase">Fecha</th>
+                        <th class="text-left py-3 text-xs font-medium text-slate-400 uppercase">Hora</th>
+                        <th class="text-left py-3 text-xs font-medium text-slate-400 uppercase">Terminal</th>
+                        <th class="text-left py-3 text-xs font-medium text-slate-400 uppercase">Vehículo</th>
+                        <th class="text-left py-3 text-xs font-medium text-slate-400 uppercase">Estado</th>
+                        <th id="thActions" class="text-left py-3 text-xs font-medium text-slate-400 uppercase hidden">Acciones</th>
+                    </tr></thead><tbody id="myTurnsTable"></tbody></table></div>
+                </div>
+            </div>
+
+            <!-- ===== TRAZABILIDAD ===== -->
+            <div id="page-trazabilidad" class="page fade-in">
+                <div class="flex flex-col sm:flex-row gap-3 mb-6">
+                    <div class="relative flex-1">
+                        <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                        <input type="text" id="trackingInput" placeholder="Buscar contenedor (ej: MSKU-7291453)" class="w-full pl-9 pr-4 py-3 border border-slate-200 rounded-xl text-sm bg-white" value="MSKU-7291453">
+                    </div>
+                    <button onclick="searchContainer()" class="bg-brand-500 hover:bg-brand-600 text-white font-semibold text-sm px-6 rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap">Rastrear</button>
+                </div>
+                <div class="grid sm:grid-cols-3 gap-4 mb-6">
+                    <div class="bg-white border border-slate-100 rounded-xl p-5"><p class="text-xs text-slate-400 mb-1">Contenedor</p><p class="font-bold text-lg">MSKU-7291453</p><p class="text-xs text-slate-500">Contenedor 40' HC</p></div>
+                    <div class="bg-white border border-slate-100 rounded-xl p-5"><p class="text-xs text-slate-400 mb-1">Origen</p><p class="font-bold">Shanghai, CN</p><p class="text-xs text-slate-500">Puerto de Yangshan</p></div>
+                    <div class="bg-white border border-slate-100 rounded-xl p-5"><p class="text-xs text-slate-400 mb-1">Destino</p><p class="font-bold">Valencia, ES</p><p class="text-xs text-slate-500">Terminal Norte</p></div>
+                </div>
+                <div class="bg-white border border-slate-100 rounded-xl p-5 mb-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-semibold text-sm">Estado actual</h3>
+                        <span class="badge bg-brand-50 text-brand-700 text-xs"><span class="w-1.5 h-1.5 rounded-full bg-brand-500 mr-1.5 animate-pulse"></span>En tránsito portuario</span>
+                    </div>
+                    <div class="w-full bg-slate-100 rounded-full h-2.5 mb-2"><div class="bg-brand-500 h-2.5 rounded-full" style="width:82%"></div></div>
+                    <p class="text-xs text-slate-500 text-right">82% completado</p>
+                </div>
+                <div class="bg-white border border-slate-100 rounded-xl p-5">
+                    <h3 class="font-semibold text-sm mb-6">Timeline del viaje</h3>
+                    <div class="space-y-0">
+                        <div class="flex gap-4 pb-8 timeline-dot"><div class="flex-shrink-0"><div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center"><i data-lucide="check" class="w-4 h-4 text-white"></i></div></div><div><p class="font-medium text-sm">Recogida en origen</p><p class="text-xs text-slate-400">Shanghai — 15 Feb 2026, 08:30</p></div></div>
+                        <div class="flex gap-4 pb-8 timeline-dot"><div class="flex-shrink-0"><div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center"><i data-lucide="check" class="w-4 h-4 text-white"></i></div></div><div><p class="font-medium text-sm">Depósito en puerto</p><p class="text-xs text-slate-400">Yangshan — 16 Feb 2026, 14:00</p></div></div>
+                        <div class="flex gap-4 pb-8 timeline-dot"><div class="flex-shrink-0"><div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center"><i data-lucide="check" class="w-4 h-4 text-white"></i></div></div><div><p class="font-medium text-sm">Embarque</p><p class="text-xs text-slate-400">Yangshan — 18 Feb 2026, 22:15</p><p class="text-xs text-slate-500 mt-1">Buque MSC Isabella — Viaje 042W</p></div></div>
+                        <div class="flex gap-4 pb-8 timeline-dot"><div class="flex-shrink-0"><div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center"><i data-lucide="check" class="w-4 h-4 text-white"></i></div></div><div><p class="font-medium text-sm">Tránsito marítimo</p><p class="text-xs text-slate-400">18 Feb — 10 Mar 2026</p></div></div>
+                        <div class="flex gap-4 pb-8 timeline-dot"><div class="flex-shrink-0"><div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center"><i data-lucide="check" class="w-4 h-4 text-white"></i></div></div><div><p class="font-medium text-sm">Llegada a puerto</p><p class="text-xs text-slate-400">Valencia — 10 Mar 2026, 06:00</p></div></div>
+                        <div class="flex gap-4"><div class="flex-shrink-0"><div class="w-8 h-8 bg-brand-500 rounded-full flex items-center justify-center animate-pulse"><i data-lucide="loader" class="w-4 h-4 text-white"></i></div></div><div><p class="font-medium text-sm text-brand-600">Desaduanamiento en curso</p><p class="text-xs text-slate-400">Valencia — 11 Mar 2026, 09:45</p></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== FLOTAS ===== -->
+            <div id="page-flotas" class="page fade-in">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                    <p class="text-sm text-slate-500" id="fleetDesc">Gestión de vehículos y conductores de tu flota.</p>
+                    <button id="fleetAddBtn" onclick="openModal('vehicleModal')" class="bg-brand-500 hover:bg-brand-600 text-white font-semibold text-sm px-5 py-2.5 rounded-lg transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i>Añadir vehículo</button>
+                </div>
+                <div class="bg-white border border-slate-100 rounded-xl p-5">
+                    <div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="border-b border-slate-100">
+                        <th class="text-left py-3 text-xs font-medium text-slate-400 uppercase">Matrícula</th>
+                        <th class="text-left py-3 text-xs font-medium text-slate-400 uppercase">Tipo</th>
+                        <th class="text-left py-3 text-xs font-medium text-slate-400 uppercase">Conductor asignado</th>
+                        <th class="text-left py-3 text-xs font-medium text-slate-400 uppercase">Estado</th>
+                        <th class="text-left py-3 text-xs font-medium text-slate-400 uppercase">Último turno</th>
+                        <th id="thFleetActions" class="text-left py-3 text-xs font-medium text-slate-400 uppercase">Acciones</th>
+                    </tr></thead><tbody id="fleetTable"></tbody></table></div>
+                </div>
+            </div>
+
+            <!-- ===== RUTAS ===== -->
+            <div id="page-rutas" class="page fade-in">
+                <div class="grid lg:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-white border border-slate-100 rounded-xl p-5">
+                        <h3 class="font-semibold text-sm mb-4">Configurar ruta</h3>
+                        <div class="space-y-4">
+                            <div><label class="block text-xs text-slate-500 mb-1">Origen</label><input type="text" value="Polígono Industrial Sur, Valencia" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white"></div>
+                            <div><label class="block text-xs text-slate-500 mb-1">Destino</label><input type="text" value="Terminal Norte, Puerto de Valencia" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white"></div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div><label class="block text-xs text-slate-500 mb-1">Hora salida</label><input type="time" value="07:30" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white"></div>
+                                <div><label class="block text-xs text-slate-500 mb-1">Tipo vehículo</label><select class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white"><option>Trailer 20'</option><option>Trailer 40'</option><option>Camión rígido</option></select></div>
+                            </div>
+                            <button onclick="optimizeRoute()" class="w-full bg-brand-500 hover:bg-brand-600 text-white font-semibold text-sm py-2.5 rounded-lg transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"><i data-lucide="brain" class="w-4 h-4"></i>Optimizar con IA</button>
+                        </div>
+                    </div>
+                    <div class="bg-white border border-slate-100 rounded-xl overflow-hidden">
+                        <div class="h-64 bg-slate-100 relative">
+                            <img src="https://picsum.photos/seed/route-map-valencia/800/400.jpg" class="w-full h-full object-cover opacity-60">
+                            <div class="absolute inset-0 flex items-center justify-center"><div class="bg-white/90 backdrop-blur-sm rounded-xl p-4 shadow-lg text-center"><i data-lucide="map" class="w-8 h-8 text-brand-500 mx-auto mb-2"></i><p class="text-xs text-slate-500">Mapa de ruta</p></div></div>
+                        </div>
+                        <div class="p-5">
+                            <h3 class="font-semibold text-sm mb-3">Resultado de la optimización</h3>
+                            <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-100 mb-3"><span class="text-sm text-green-700 font-medium">Ruta óptima encontrada</span><i data-lucide="check-circle" class="w-4 h-4 text-green-500"></i></div>
+                            <div class="grid grid-cols-3 gap-3 text-center">
+                                <div class="bg-slate-50 rounded-lg p-3"><p class="text-lg font-bold text-brand-600">32 min</p><p class="text-[10px] text-slate-500 uppercase">Duración</p></div>
+                                <div class="bg-slate-50 rounded-lg p-3"><p class="text-lg font-bold text-brand-600">18.4 km</p><p class="text-[10px] text-slate-500 uppercase">Distancia</p></div>
+                                <div class="bg-slate-50 rounded-lg p-3"><p class="text-lg font-bold text-green-600">-22%</p><p class="text-[10px] text-slate-500 uppercase">vs. habitual</p></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white border border-slate-100 rounded-xl p-5">
+                    <h3 class="font-semibold text-sm mb-4">Condiciones del tráfico</h3>
+                    <div class="grid sm:grid-cols-3 gap-4">
+                        <div class="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-100"><div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center"><i data-lucide="check" class="w-4 h-4 text-green-600"></i></div><div><p class="text-sm font-medium">V-30</p><p class="text-xs text-green-600">Fluido</p></div></div>
+                        <div class="flex items-center gap-3 p-3 bg-amber-50 rounded-lg border border-amber-100"><div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center"><i data-lucide="alert-triangle" class="w-4 h-4 text-amber-600"></i></div><div><p class="text-sm font-medium">Acceso puerto</p><p class="text-xs text-amber-600">Moderado</p></div></div>
+                        <div class="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-100"><div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center"><i data-lucide="check" class="w-4 h-4 text-green-600"></i></div><div><p class="text-sm font-medium">V-31</p><p class="text-xs text-green-600">Fluido</p></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== FACTURACIÓN ===== -->
+            <div id="page-facturacion" class="page fade-in">
+                <div class="grid sm:grid-cols-3 gap-4 mb-6">
+                    <div class="stat-card bg-white border border-slate-100 rounded-xl p-5"><p class="text-xs text-slate-400 mb-1">Facturado este mes</p><p class="text-2xl font-bold" id="invTotal">3.847 €</p></div>
+                    <div class="stat-card bg-white border border-slate-100 rounded-xl p-5"><p class="text-xs text-slate-400 mb-1">Pendiente de cobro</p><p class="text-2xl font-bold text-amber-600" id="invPending">612 €</p></div>
+                    <div class="stat-card bg-white border border-slate-100 rounded-xl p-5"><p class="text-xs text-slate-400 mb-1">Facturas este mes</p><p class="text-2xl font-bold" id="invCount">47</p></div>
+                </div>
+                <div class="bg-white border border-slate-100 rounded-xl p-5">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-semibold text-sm">Historial de facturas</h3>
+                        <button id="invAddBtn" onclick="showToast('Factura generada')" class="text-xs bg-brand-50 text-brand-600 font-medium px-3 py-1.5 rounded-lg hover:bg-brand-100 transition-colors">+ Generar factura</button>
+                    </div>
+                    <div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="border-b border-slate-100">
+                        <th class="text-left py-3 text-xs font-medium text-slate-400 uppercase">Factura</th><th class="text-left py-3 text-xs font-medium text-slate-400 uppercase">Fecha</th><th class="text-left py-3 text-xs font-medium text-slate-400 uppercase">Concepto</th><th class="text-left py-3 text-xs font-medium text-slate-400 uppercase">Importe</th><th class="text-left py-3 text-xs font-medium text-slate-400 uppercase">Estado</th>
+                    </tr></thead><tbody id="invTable"></tbody></table></div>
+                </div>
+            </div>
+
+            <!-- ===== REPORTES ===== -->
+            <div id="page-reportes" class="page fade-in">
+                <div class="grid sm:grid-cols-2 gap-4 mb-6">
+                    <div class="bg-white border border-slate-100 rounded-xl p-5">
+                        <h3 class="font-semibold text-sm mb-4">Tiempo medio de espera</h3>
+                        <div class="flex items-end gap-1 h-32">
+                            <div class="flex-1 bg-brand-100 rounded-t" style="height:60%"></div><div class="flex-1 bg-brand-200 rounded-t" style="height:45%"></div><div class="flex-1 bg-brand-300 rounded-t" style="height:55%"></div><div class="flex-1 bg-brand-400 rounded-t" style="height:35%"></div><div class="flex-1 bg-brand-500 rounded-t" style="height:25%"></div><div class="flex-1 bg-brand-400 rounded-t" style="height:30%"></div><div class="flex-1 bg-brand-500 rounded-t" style="height:20%"></div>
+                        </div>
+                        <div class="flex justify-between text-[10px] text-slate-400 mt-2"><span>Ene</span><span>Feb</span><span>Mar</span><span>Abr</span><span>May</span><span>Jun</span><span>Jul</span></div>
+                        <p class="text-xs text-green-600 font-medium mt-3">↓ 42% de reducción vs. periodo anterior</p>
+                    </div>
+                    <div class="bg-white border border-slate-100 rounded-xl p-5">
+                        <h3 class="font-semibold text-sm mb-4">Ocupación por hora</h3>
+                        <div class="flex items-end gap-1 h-32">
+                            <div class="flex-1 bg-slate-200 rounded-t" style="height:15%"></div><div class="flex-1 bg-slate-200 rounded-t" style="height:20%"></div><div class="flex-1 bg-brand-200 rounded-t" style="height:45%"></div><div class="flex-1 bg-brand-400 rounded-t" style="height:80%"></div><div class="flex-1 bg-brand-500 rounded-t" style="height:100%"></div><div class="flex-1 bg-brand-400 rounded-t" style="height:90%"></div><div class="flex-1 bg-brand-300 rounded-t" style="height:70%"></div><div class="flex-1 bg-brand-200 rounded-t" style="height:50%"></div><div class="flex-1 bg-brand-300 rounded-t" style="height:55%"></div><div class="flex-1 bg-brand-400 rounded-t" style="height:75%"></div><div class="flex-1 bg-brand-300 rounded-t" style="height:60%"></div><div class="flex-1 bg-slate-200 rounded-t" style="height:25%"></div>
+                        </div>
+                        <div class="flex justify-between text-[10px] text-slate-400 mt-2"><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span><span>17</span></div>
+                        <p class="text-xs text-slate-500 mt-3">Pico máximo: 10:00 — 11:00 (98%)</p>
+                    </div>
+                </div>
+                <div class="bg-white border border-slate-100 rounded-xl p-5">
+                    <h3 class="font-semibold text-sm mb-4">Resumen operativo mensual</h3>
+                    <div class="grid sm:grid-cols-4 gap-4">
+                        <div class="text-center p-4 bg-slate-50 rounded-xl"><p class="text-2xl font-bold">1.247</p><p class="text-xs text-slate-500 mt-1">Turnos gestionados</p></div>
+                        <div class="text-center p-4 bg-slate-50 rounded-xl"><p class="text-2xl font-bold">18 min</p><p class="text-xs text-slate-500 mt-1">Espera media</p></div>
+                        <div class="text-center p-4 bg-slate-50 rounded-xl"><p class="text-2xl font-bold">96.4%</p><p class="text-xs text-slate-500 mt-1">Cumplimiento turno</p></div>
+                        <div class="text-center p-4 bg-slate-50 rounded-xl"><p class="text-2xl font-bold text-green-600">4.7</p><p class="text-xs text-slate-500 mt-1">Satisfacción /5</p></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== USUARIOS ===== -->
+            <div id="page-usuarios" class="page fade-in">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                    <p class="text-sm text-slate-500">Gestión de usuarios y control de acceso basado en roles (RBAC).</p>
+                    <button onclick="openModal('userModal')" class="bg-brand-500 hover:bg-brand-600 text-white font-semibold text-sm px-5 py-2.5 rounded-lg transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center gap-2"><i data-lucide="user-plus" class="w-4 h-4"></i>Invitar usuario</button>
+                </div>
+                <div class="bg-white border border-slate-100 rounded-xl p-5">
+                    <div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="border-b border-slate-100">
+                        <th class="text-left py-3 text-xs font-medium text-slate-400 uppercase">Usuario</th><th class="text-left py-3 text-xs font-medium text-slate-400 uppercase">Email</th><th class="text-left py-3 text-xs font-medium text-slate-400 uppercase">Rol</th><th class="text-left py-3 text-xs font-medium text-slate-400 uppercase">Estado</th><th class="text-left py-3 text-xs font-medium text-slate-400 uppercase">Último acceso</th>
+                    </tr></thead><tbody id="usersTable"></tbody></table></div>
+                </div>
+            </div>
+
+            <!-- ===== CONFIGURACIÓN ===== -->
+            <div id="page-config" class="page fade-in">
+                <div class="max-w-2xl space-y-6">
+                    <div class="bg-white border border-slate-100 rounded-xl p-5">
+                        <h3 class="font-semibold text-sm mb-4">Datos de la empresa</h3>
+                        <div class="space-y-4">
+                            <div><label class="block text-xs text-slate-500 mb-1">Nombre de la empresa</label><input type="text" value="PortTech S.L." class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white"></div>
+                            <div><label class="block text-xs text-slate-500 mb-1">CIF</label><input type="text" value="B-12345678" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white"></div>
+                            <div><label class="block text-xs text-slate-500 mb-1">Dirección</label><input type="text" value="Av. del Puerto, 42, Valencia" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white"></div>
+                        </div>
+                    </div>
+                    <div class="bg-white border border-slate-100 rounded-xl p-5">
+                        <h3 class="font-semibold text-sm mb-4">Perfil del usuario</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center gap-4"><div id="cfgAvatar" class="w-14 h-14 bg-brand-100 rounded-full flex items-center justify-center text-brand-700 font-bold text-xl"></div><button class="text-xs text-brand-600 font-medium hover:underline">Cambiar foto</button></div>
+                            <div class="grid sm:grid-cols-2 gap-4">
+                                <div><label class="block text-xs text-slate-500 mb-1">Nombre</label><input type="text" id="cfgName" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white"></div>
+                                <div><label class="block text-xs text-slate-500 mb-1">Apellido</label><input type="text" id="cfgLastName" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white"></div>
+                            </div>
+                            <div><label class="block text-xs text-slate-500 mb-1">Email</label><input type="email" id="cfgEmail" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white"></div>
+                        </div>
+                    </div>
+                    <div class="bg-white border border-slate-100 rounded-xl p-5">
+                        <h3 class="font-semibold text-sm mb-4">Notificaciones</h3>
+                        <div class="space-y-3">
+                            <label class="flex items-center justify-between cursor-pointer"><span class="text-sm text-slate-600">Notificaciones por email</span><input type="checkbox" checked class="accent-brand-500 w-4 h-4"></label>
+                            <label class="flex items-center justify-between cursor-pointer"><span class="text-sm text-slate-600">Alertas de turnos</span><input type="checkbox" checked class="accent-brand-500 w-4 h-4"></label>
+                            <label class="flex items-center justify-between cursor-pointer"><span class="text-sm text-slate-600">Actualizaciones de contenedores</span><input type="checkbox" checked class="accent-brand-500 w-4 h-4"></label>
+                            <label class="flex items-center justify-between cursor-pointer"><span class="text-sm text-slate-600">Resumen semanal por email</span><input type="checkbox" class="accent-brand-500 w-4 h-4"></label>
+                        </div>
+                    </div>
+                    <button onclick="showToast('Configuración guardada correctamente')" class="bg-brand-500 hover:bg-brand-600 text-white font-semibold text-sm px-6 py-2.5 rounded-lg transition-all hover:scale-[1.02] active:scale-[0.98]">Guardar cambios</button>
+                </div>
+            </div>
+
+            <!-- ===== RESTRICTED NOTICE ===== -->
+            <div id="page-restricted" class="page fade-in">
+                <div class="flex flex-col items-center justify-center py-20">
+                    <div class="w-20 h-20 bg-slate-100 rounded-2xl flex items-center justify-center mb-6"><i data-lucide="lock" class="w-10 h-10 text-slate-400"></i></div>
+                    <h2 class="text-xl font-semibold mb-2">Acceso restringido</h2>
+                    <p id="restrictedMsg" class="text-slate-500 text-sm text-center max-w-md">No tienes permisos para acceder a esta sección. Contacta con el administrador si necesitas acceso.</p>
+                </div>
+            </div>
+
+        </main>
+    </div>
+</div>
+
+<!-- Vehicle modal -->
+<div id="vehicleModal" class="modal-bg"><div class="modal-box">
+    <div class="flex items-center justify-between mb-5"><h3 class="font-semibold text-lg">Añadir vehículo</h3><button onclick="closeModal('vehicleModal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button></div>
+    <form onsubmit="addVehicle(event)" class="space-y-4">
+        <div><label class="block text-xs text-slate-500 mb-1">Matrícula</label><input type="text" id="vPlate" required placeholder="1234-ABC" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white"></div>
+        <div><label class="block text-xs text-slate-500 mb-1">Tipo</label><select id="vType" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white"><option>Trailer 20'</option><option>Trailer 40'</option><option>Camión rígido</option></select></div>
+        <div><label class="block text-xs text-slate-500 mb-1">Conductor</label><select id="vDriver" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white"><option>Carlos Ruiz</option><option>Maria López</option><option>Antonio García</option><option>Sin asignar</option></select></div>
+        <div class="flex gap-3 pt-2"><button type="submit" class="flex-1 bg-brand-500 hover:bg-brand-600 text-white font-semibold text-sm py-2.5 rounded-lg">Añadir</button><button type="button" onclick="closeModal('vehicleModal')" class="flex-1 border border-slate-200 text-slate-600 font-medium text-sm py-2.5 rounded-lg hover:bg-slate-50">Cancelar</button></div>
+    </form>
+</div></div>
+
+<!-- User modal -->
+<div id="userModal" class="modal-bg"><div class="modal-box">
+    <div class="flex items-center justify-between mb-5"><h3 class="font-semibold text-lg">Invitar usuario</h3><button onclick="closeModal('userModal')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button></div>
+    <form onsubmit="addUser(event)" class="space-y-4">
+        <div><label class="block text-xs text-slate-500 mb-1">Nombre completo</label><input type="text" id="uName" required class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white"></div>
+        <div><label class="block text-xs text-slate-500 mb-1">Email</label><input type="email" id="uEmail" required class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white"></div>
+        <div><label class="block text-xs text-slate-500 mb-1">Rol</label><select id="uRole" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white"><option>Admin</option><option>Operador</option><option>Conductor</option><option>Lectura</option></select></div>
+        <div class="flex gap-3 pt-2"><button type="submit" class="flex-1 bg-brand-500 hover:bg-brand-600 text-white font-semibold text-sm py-2.5 rounded-lg">Enviar invitación</button><button type="button" onclick="closeModal('userModal')" class="flex-1 border border-slate-200 text-slate-600 font-medium text-sm py-2.5 rounded-lg hover:bg-slate-50">Cancelar</button></div>
+    </form>
+</div></div>
+
+<script>
+// ====== ROLE SYSTEM ======
+const ROLES = {
+    admin: {
+        label: 'Administrador', color: 'bg-brand-50 text-brand-700', avatar: 'bg-brand-500 text-white',
+        user: { name: 'Jesus', lastName: 'Sanchez', email: 'admin@porttech.io', initials: 'JS' },
+        pages: ['dashboard','turnos','trazabilidad','flotas','rutas','facturacion','reportes','usuarios','config'],
+        canManage: true
+    },
+    conductor: {
+        label: 'Conductor', color: 'bg-blue-50 text-blue-700', avatar: 'bg-blue-500 text-white',
+        user: { name: 'Carlos', lastName: 'Ruiz', email: 'carlos@transportes.com', initials: 'CR' },
+        pages: ['dashboard','turnos','trazabilidad','rutas','facturacion'],
+        canManage: false
+    },
+    operador: {
+        label: 'Operador de Terminal', color: 'bg-green-50 text-green-700', avatar: 'bg-green-600 text-white',
+        user: { name: 'Antonio', lastName: 'García', email: 'antonio@logistica.es', initials: 'AG' },
+        pages: ['dashboard','turnos','trazabilidad','flotas','rutas','reportes'],
+        canManage: false
+    }
+};
+
+let currentRole = 'admin';
+const pageLabels = {dashboard:'Dashboard',turnos:'Reserva de turnos',trazabilidad:'Trazabilidad',flotas:'Flotas',rutas:'Optimización de rutas',facturacion:'Facturación',reportes:'Reportes',usuarios:'Usuarios',config:'Configuración'};
+const pageIcons = {dashboard:'layout-dashboard',turnos:'calendar-check',trazabilidad:'package-search',flotas:'truck',rutas:'route',facturacion:'receipt',reportes:'bar-chart-3',usuarios:'users',config:'settings'};
+
+// ====== DATA ======
+const activities = [
+    {id:'TRN-4521',veh:'1234-ABC',driver:'Carlos Ruiz',terminal:'Terminal Norte',turno:'09:00',status:'completado'},
+    {id:'TRN-4522',veh:'5678-DEF',driver:'Maria López',terminal:'Terminal Sur',turno:'09:30',status:'en_curso'},
+    {id:'TRN-4523',veh:'9012-GHI',driver:'Antonio García',terminal:'Terminal Norte',turno:'10:00',status:'en_espera'},
+    {id:'TRN-4524',veh:'3456-JKL',driver:'Carlos Ruiz',terminal:'Terminal Este',turno:'10:30',status:'programado'},
+    {id:'TRN-4525',veh:'7890-MNO',driver:'Maria López',terminal:'Terminal Oeste',turno:'11:00',status:'programado'},
+];
+const conductorTurns = [
+    {ref:'TRN-4521',date:'2026-03-12',time:'09:00',terminal:'Terminal Norte',veh:'1234-ABC',status:'completado'},
+    {ref:'TRN-4524',date:'2026-03-13',time:'10:30',terminal:'Terminal Este',veh:'3456-JKL',status:'programado'},
+];
+const allTurns = [
+    {ref:'TRN-4501',date:'2026-03-10',time:'08:00',terminal:'Terminal Norte',veh:'1234-ABC',status:'completado'},
+    {ref:'TRN-4505',date:'2026-03-10',time:'09:00',terminal:'Terminal Sur',veh:'5678-DEF',status:'completado'},
+    {ref:'TRN-4512',date:'2026-03-11',time:'14:00',terminal:'Terminal Norte',veh:'9012-GHI',status:'completado'},
+    ...conductorTurns,
+];
+const fleet = [
+    {plate:'1234-ABC',type:'Trailer 40\'',driver:'Carlos Ruiz',status:'en_transito',last:'Hoy 09:00'},
+    {plate:'5678-DEF',type:'Trailer 20\'',driver:'Maria López',status:'disponible',last:'Hoy 09:30'},
+    {plate:'9012-GHI',type:'Camión rígido',driver:'Antonio García',status:'en_transito',last:'Hoy 10:00'},
+    {plate:'3456-JKL',type:'Trailer 40\'',driver:'Sin asignar',status:'disponible',last:'Ayer 16:00'},
+    {plate:'7890-MNO',type:'Trailer 20\'',driver:'Carlos Ruiz',status:'mantenimiento',last:'Hace 3 días'},
+];
+const invoices = [
+    {num:'FAC-2026-047',date:'11 Mar 2026',concept:'Turno TRN-4521',amount:'5,00 €',status:'pagada'},
+    {num:'FAC-2026-046',date:'11 Mar 2026',concept:'Turno TRN-4520',amount:'5,00 €',status:'pagada'},
+    {num:'FAC-2026-045',date:'10 Mar 2026',concept:'Turno TRN-4519',amount:'5,00 €',status:'pendiente'},
+    {num:'FAC-2026-044',date:'10 Mar 2026',concept:'Turno TRN-4518',amount:'5,00 €',status:'pagada'},
+    {num:'FAC-2026-043',date:'09 Mar 2026',concept:'Suscripción Flotas PRO — Marzo',amount:'199,00 €',status:'pagada'},
+];
+const conductorInvoices = [
+    {num:'FAC-2026-047',date:'11 Mar 2026',concept:'Turno TRN-4521',amount:'5,00 €',status:'pagada'},
+];
+const users = [
+    {name:'Jesus Sanchez',email:'admin@porttech.io',role:'Admin',status:'activo',last:'Ahora'},
+    {name:'Sebastian Perea',email:'sebastian@porttech.io',role:'Admin',status:'activo',last:'Hace 1h'},
+    {name:'Carlos Ruiz',email:'carlos@transportes.com',role:'Conductor',status:'activo',last:'Hace 30m'},
+    {name:'Maria López',email:'maria@transportes.com',role:'Conductor',status:'activo',last:'Hace 2h'},
+    {name:'Antonio García',email:'antonio@logistica.es',role:'Operador',status:'activo',last:'Ayer'},
+    {name:'Yanier Martínez',email:'yanier@porttech.io',role:'Operador',status:'inactivo',last:'Hace 5 días'},
+];
+
+const sb = s => {
+    const m={completado:'bg-green-50 text-green-600',en_curso:'bg-brand-50 text-brand-700',en_espera:'bg-amber-50 text-amber-600',programado:'bg-blue-50 text-blue-600',en_transito:'bg-brand-50 text-brand-700',disponible:'bg-green-50 text-green-600',mantenimiento:'bg-red-50 text-red-600',pagada:'bg-green-50 text-green-600',pendiente:'bg-amber-50 text-amber-600',activo:'bg-green-50 text-green-600',inactivo:'bg-slate-100 text-slate-500'};
+    const l={completado:'Completado',en_curso:'En curso',en_espera:'En espera',programado:'Programado',en_transito:'En tránsito',disponible:'Disponible',mantenimiento:'Mantenimiento',pagada:'Pagada',pendiente:'Pendiente',activo:'Activo',inactivo:'Inactivo'};
+    return `<span class="badge ${m[s]||'bg-slate-100 text-slate-600'}">${l[s]||s}</span>`;
+};
+
+// ====== LOGIN ======
+function selectRole(role) {
+    currentRole = role;
+    document.querySelectorAll('.role-card').forEach(c => { c.classList.remove('selected'); c.classList.replace('border-brand-500','border-slate-200'); });
+    const el = document.querySelector(`.role-card[data-role="${role}"]`);
+    el.classList.add('selected'); el.classList.replace('border-slate-200','border-brand-500');
+    document.getElementById('loginEmail').value = ROLES[role].user.email;
+}
+
+function doLogin(e) {
+    e.preventDefault();
+    const role = ROLES[currentRole];
+    document.getElementById('loginPage').classList.add('hidden');
+    document.getElementById('appShell').classList.remove('hidden');
+
+    // Setup user info
+    document.getElementById('roleBadge').className = `badge ${role.color} text-xs w-full justify-center py-1.5`;
+    document.getElementById('roleBadge').textContent = role.label;
+    document.getElementById('userAvatar').className = `w-9 h-9 rounded-full flex items-center justify-center font-semibold text-sm ${role.avatar}`;
+    document.getElementById('userAvatar').textContent = role.user.initials;
+    document.getElementById('headerAvatar').className = `w-9 h-9 rounded-full flex items-center justify-center font-semibold text-sm cursor-pointer ${role.avatar}`;
+    document.getElementById('headerAvatar').textContent = role.user.initials;
+    document.getElementById('userName').textContent = role.user.name + ' ' + role.user.lastName;
+    document.getElementById('userEmail').textContent = role.user.email;
+    document.getElementById('cfgName').value = role.user.name;
+    document.getElementById('cfgLastName').value = role.user.lastName;
+    document.getElementById('cfgEmail').value = role.user.email;
+    document.getElementById('cfgAvatar').textContent = role.user.initials;
+
+    // Build sidebar
+    const nav = document.getElementById('sidebarNav');
+    nav.innerHTML = role.pages.map(p =>
+        `<button onclick="showPage('${p}')" class="sidebar-link ${p==='dashboard'?'active':''} w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-600" data-page="${p}"><i data-lucide="${pageIcons[p]}" class="w-[18px] h-[18px]"></i>${pageLabels[p]}</button>`
+    ).join('');
+
+    // Role-specific UI adjustments
+    const cm = role.canManage;
+    document.getElementById('fleetAddBtn').classList.toggle('hidden', !cm);
+    document.getElementById('thFleetActions').classList.toggle('hidden', !cm);
+    document.getElementById('invAddBtn').classList.toggle('hidden', !cm);
+    document.getElementById('thActions').classList.toggle('hidden', !cm);
+    document.getElementById('turnVehicleWrap').classList.toggle('hidden', currentRole==='conductor');
+    document.getElementById('turnDriverWrap').classList.toggle('hidden', currentRole==='conductor');
+
+    // Descriptions per role
+    document.getElementById('turnsDesc').textContent = currentRole==='conductor'
+        ? 'Reserva un turno para acceder al puerto con tu vehículo asignado.'
+        : 'Selecciona fecha y horario para turnos de acceso al puerto.';
+    document.getElementById('myTurnsTitle').textContent = currentRole==='conductor' ? 'Mis turnos asignados' : 'Todos los turnos';
+    document.getElementById('fleetDesc').textContent = currentRole==='operador'
+        ? 'Vista de vehículos de la terminal. Solo lectura.'
+        : 'Gestión de vehículos y conductores de tu flota.';
+    document.getElementById('actTitle').textContent = currentRole==='conductor' ? 'Mi actividad' : 'Actividad reciente';
+
+    renderAll();
+    lucide.createIcons();
+}
+
+function doLogout() {
+    document.getElementById('appShell').classList.add('hidden');
+    document.getElementById('loginPage').classList.remove('hidden');
+}
+
+// ====== RENDER ======
+function renderAll() {
+    const role = ROLES[currentRole];
+    const isConductor = currentRole === 'conductor';
+
+    // Dashboard stats
+    const stats = isConductor
+        ? [{icon:'calendar-check',color:'brand',label:'Mis turnos hoy',value:'2',badge:'+1',badgeColor:'green'},
+           {icon:'truck',color:'brand',label:'Mi vehículo',value:'1234-ABC',badge:'En tránsito',badgeColor:'brand'},
+           {icon:'package',color:'amber',label:'Contenedores asignados',value:'3',badge:null},
+           {icon:'clock',color:'green',label:'Próximo turno',value:'10:30',badge:'Terminal Este',badgeColor:'blue'}]
+        : [{icon:'calendar-check',color:'brand',label:'Turnos activos hoy',value:'47',badge:'+12%',badgeColor:'green'},
+           {icon:'truck',color:'blue',label:'En tránsito ahora',value:'23',badge:'23',badgeColor:'blue'},
+           {icon:'check-circle',color:'green',label:'Completados hoy',value:'184',badge:'+8%',badgeColor:'green'},
+           {icon:'package',color:'amber',label:'Contenedores en seguimiento',value:'512',badge:'512',badgeColor:'amber'}];
+
+    document.getElementById('dashStats').innerHTML = stats.map(s => `
+        <div class="stat-card bg-white border border-slate-100 rounded-xl p-5">
+            <div class="flex items-center justify-between mb-3">
+                <div class="w-10 h-10 bg-${s.color}-50 rounded-lg flex items-center justify-center"><i data-lucide="${s.icon}" class="w-5 h-5 text-${s.color}-500"></i></div>
+                ${s.badge?`<span class="badge bg-${s.badgeColor}-50 text-${s.badgeColor}-600">${s.badge}</span>`:''}
+            </div>
+            <p class="text-2xl font-bold">${s.value}</p><p class="text-xs text-slate-500 mt-1">${s.label}</p>
+        </div>`).join('');
+
+    // Charts (only admin/operador)
+    if (!isConductor) {
+        document.getElementById('dashCharts').innerHTML = `
+            <div class="lg:col-span-2 bg-white border border-slate-100 rounded-xl p-5">
+                <div class="flex items-center justify-between mb-4"><h3 class="font-semibold text-sm">Flujo de vehículos (7 días)</h3>
+                    <div class="flex gap-1"><span class="badge bg-brand-50 text-brand-600"><span class="w-2 h-2 rounded-full bg-brand-500 mr-1.5"></span>Turnos</span><span class="badge bg-blue-50 text-blue-600"><span class="w-2 h-2 rounded-full bg-blue-500 mr-1.5"></span>Completados</span></div></div>
+                <svg viewBox="0 0 600 180" class="w-full"><defs><linearGradient id="g1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f97316" stop-opacity=".2"/><stop offset="100%" stop-color="#f97316" stop-opacity="0"/></linearGradient><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#3b82f6" stop-opacity=".1"/><stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/></linearGradient></defs>
+                <line x1="40" y1="20" x2="40" y2="150" stroke="#e2e8f0"/><line x1="40" y1="150" x2="580" y2="150" stroke="#e2e8f0"/>
+                <text x="30" y="24" font-size="10" fill="#94a3b8" text-anchor="end">200</text><text x="30" y="89" font-size="10" fill="#94a3b8" text-anchor="end">100</text><text x="30" y="154" font-size="10" fill="#94a3b8" text-anchor="end">0</text>
+                <text x="100" y="168" font-size="10" fill="#94a3b8" text-anchor="middle">Lun</text><text x="180" y="168" font-size="10" fill="#94a3b8" text-anchor="middle">Mar</text><text x="260" y="168" font-size="10" fill="#94a3b8" text-anchor="middle">Mié</text><text x="340" y="168" font-size="10" fill="#94a3b8" text-anchor="middle">Jue</text><text x="420" y="168" font-size="10" fill="#94a3b8" text-anchor="middle">Vie</text><text x="500" y="168" font-size="10" fill="#94a3b8" text-anchor="middle">Sáb</text><text x="565" y="168" font-size="10" fill="#94a3b8" text-anchor="middle">Dom</text>
+                <path d="M100,70 Q140,60 180,55 T260,40 T340,48 T420,35 T500,52 T565,65 V150 H100 Z" fill="url(#g1)"/><path d="M100,70 Q140,60 180,55 T260,40 T340,48 T420,35 T500,52 T565,65" fill="none" stroke="#f97316" stroke-width="2.5" stroke-linecap="round"/>
+                <path d="M100,90 Q140,82 180,78 T260,65 T340,72 T420,60 T500,75 T565,85 V150 H100 Z" fill="url(#g2)"/><path d="M100,90 Q140,82 180,78 T260,65 T340,72 T420,60 T500,75 T565,85" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round"/>
+                <circle cx="420" cy="35" r="4" fill="#f97316"/></svg>
+            </div>
+            <div class="bg-white border border-slate-100 rounded-xl p-5"><h3 class="font-semibold text-sm mb-4">Distribución por terminal</h3>
+                <div class="flex justify-center mb-4"><svg viewBox="0 0 120 120" class="w-32 h-32"><circle cx="60" cy="60" r="50" fill="none" stroke="#e2e8f0" stroke-width="20"/><circle cx="60" cy="60" r="50" fill="none" stroke="#f97316" stroke-width="20" stroke-dasharray="110 204" transform="rotate(-90 60 60)"/><circle cx="60" cy="60" r="50" fill="none" stroke="#fb923c" stroke-width="20" stroke-dasharray="62 252" stroke-dashoffset="-110" transform="rotate(-90 60 60)"/><circle cx="60" cy="60" r="50" fill="none" stroke="#fdba74" stroke-width="20" stroke-dasharray="45 269" stroke-dashoffset="-172" transform="rotate(-90 60 60)"/><circle cx="60" cy="60" r="50" fill="none" stroke="#fed7aa" stroke-width="20" stroke-dasharray="97 217" stroke-dashoffset="-217" transform="rotate(-90 60 60)"/><text x="60" y="57" text-anchor="middle" font-size="16" font-weight="700" fill="#0f172a">314</text><text x="60" y="72" text-anchor="middle" font-size="9" fill="#94a3b8">total</text></svg></div>
+                <div class="space-y-2 text-xs"><div class="flex items-center justify-between"><span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-brand-500"></span>Terminal Norte</span><span class="font-semibold">35%</span></div><div class="flex items-center justify-between"><span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-brand-400"></span>Terminal Sur</span><span class="font-semibold">20%</span></div><div class="flex items-center justify-between"><span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-brand-300"></span>Terminal Este</span><span class="font-semibold">14%</span></div><div class="flex items-center justify-between"><span class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-brand-200"></span>Terminal Oeste</span><span class="font-semibold">31%</span></div></div>
+            </div>`;
+    } else {
+        document.getElementById('dashCharts').innerHTML = `
+            <div class="bg-white border border-slate-100 rounded-xl p-5">
+                <h3 class="font-semibold text-sm mb-4">Mi vehículo asignado</h3>
+                <div class="flex items-center gap-4 p-4 bg-slate-50 rounded-xl">
+                    <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center"><i data-lucide="truck" class="w-6 h-6 text-blue-600"></i></div>
+                    <div><p class="font-bold">1234-ABC</p><p class="text-xs text-slate-500">Trailer 40' — En tránsito</p></div>
+                    <div class="ml-auto">${sb('en_transito')}</div>
+                </div>
+                <div class="mt-4 p-4 bg-brand-50 rounded-xl border border-brand-100">
+                    <div class="flex items-center gap-2 mb-2"><i data-lucide="info" class="w-4 h-4 text-brand-500"></i><p class="text-sm font-medium text-brand-700">Próximo turno</p></div>
+                    <p class="text-sm text-brand-600">Hoy a las 10:30 — Terminal Este</p>
+                    <p class="text-xs text-brand-500 mt-1">Ref: TRN-4524 — Contenedor MSKU-7291453</p>
+                </div>
+            </div>
+            <div class="bg-white border border-slate-100 rounded-xl p-5">
+                <h3 class="font-semibold text-sm mb-4">Mis notificaciones</h3>
+                <div class="space-y-3">
+                    <div class="flex gap-3 p-3 bg-green-50 rounded-lg border border-green-100"><i data-lucide="check-circle" class="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5"></i><div><p class="text-sm font-medium">Turno TRN-4521 completado</p><p class="text-xs text-slate-500">Hace 2 horas</p></div></div>
+                    <div class="flex gap-3 p-3 bg-brand-50 rounded-lg border border-brand-100"><i data-lucide="bell" class="w-4 h-4 text-brand-500 flex-shrink-0 mt-0.5"></i><div><p class="text-sm font-medium">Turno TRN-4524 programado para hoy 10:30</p><p class="text-xs text-slate-500">Hace 5 horas</p></div></div>
+                    <div class="flex gap-3 p-3 bg-blue-50 rounded-lg border border-blue-100"><i data-lucide="package" class="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5"></i><div><p class="text-sm font-medium">MSKU-7291453 en desaduanamiento</p><p class="text-xs text-slate-500">Ayer</p></div></div>
+                </div>
+            </div>`;
+    }
+
+    // Activity table
+    const actData = isConductor ? activities.filter(a => a.driver === 'Carlos Ruiz') : activities;
+    document.getElementById('actTable').innerHTML = actData.map(a => `<tr class="border-b border-slate-50 hover:bg-slate-50/50"><td class="py-3 font-medium text-brand-600">${a.id}</td><td class="py-3">${a.veh}</td><td class="py-3">${a.driver}</td><td class="py-3">${a.terminal}</td><td class="py-3">${a.turno}</td><td class="py-3">${sb(a.status)}</td></tr>`).join('');
+
+    // Turns table
+    const turnsData = isConductor ? conductorTurns : allTurns;
+    document.getElementById('myTurnsTable').innerHTML = turnsData.map(t => `<tr class="border-b border-slate-50 hover:bg-slate-50/50"><td class="py-3 font-medium text-brand-600">${t.ref}</td><td class="py-3">${t.date}</td><td class="py-3">${t.time}</td><td class="py-3">${t.terminal}</td><td class="py-3">${t.veh}</td><td class="py-3">${sb(t.status)}</td>${role.canManage?`<td class="py-3"><button onclick="showToast('Cancelando ${t.ref}...')" class="text-red-500 hover:text-red-600 text-xs font-medium">Cancelar</button></td>`:''}</tr>`).join('');
+
+    // Turn form selects for conductor
+    if (isConductor) {
+        document.getElementById('turnVehicle').innerHTML = '<option>1234-ABC</option>';
+        document.getElementById('turnDriver').innerHTML = '<option>Carlos Ruiz</option>';
+    } else {
+        document.getElementById('turnVehicle').innerHTML = fleet.map(f => `<option>${f.plate}</option>`).join('');
+        document.getElementById('turnDriver').innerHTML = [...new Set(fleet.map(f=>f.driver))].map(d => `<option>${d}</option>`).join('');
+    }
+
+    // Fleet table
+    const fleetActions = role.canManage ? '<td class="py-3"><button class="text-brand-600 hover:text-brand-700 text-xs font-medium mr-2" onclick="showToast(\'Editando...\')">Editar</button><button class="text-red-500 hover:text-red-600 text-xs font-medium" onclick="showToast(\'Eliminado\')">Eliminar</button></td>' : '';
+    document.getElementById('fleetTable').innerHTML = fleet.map(f => `<tr class="border-b border-slate-50 hover:bg-slate-50/50"><td class="py-3 font-medium">${f.plate}</td><td class="py-3">${f.type}</td><td class="py-3">${f.driver}</td><td class="py-3">${sb(f.status)}</td><td class="py-3 text-slate-500">${f.last}</td>${fleetActions}</tr>`).join('');
+
+    // Invoices
+    const invData = isConductor ? conductorInvoices : invoices;
+    document.getElementById('invTotal').textContent = isConductor ? '5 €' : '3.847 €';
+    document.getElementById('invPending').textContent = isConductor ? '0 €' : '612 €';
+    document.getElementById('invCount').textContent = invData.length;
+    document.getElementById('invTable').innerHTML = invData.map(i => `<tr class="border-b border-slate-50 hover:bg-slate-50/50"><td class="py-3 font-medium text-brand-600">${i.num}</td><td class="py-3">${i.date}</td><td class="py-3">${i.concept}</td><td class="py-3 font-semibold">${i.amount}</td><td class="py-3">${sb(i.status)}</td></tr>`).join('');
+
+    // Users
+    document.getElementById('usersTable').innerHTML = users.map(u => `<tr class="border-b border-slate-50 hover:bg-slate-50/50"><td class="py-3"><div class="flex items-center gap-2"><div class="w-7 h-7 bg-brand-100 rounded-full flex items-center justify-center text-brand-700 font-semibold text-xs">${u.name.split(' ').map(n=>n[0]).join('')}</div><span class="font-medium">${u.name}</span></div></td><td class="py-3 text-slate-500">${u.email}</td><td class="py-3"><span class="badge bg-slate-100 text-slate-600">${u.role}</span></td><td class="py-3">${sb(u.status)}</td><td class="py-3 text-slate-500">${u.last}</td></tr>`).join('');
+}
+
+// ====== TURNOS ======
+let selectedSlot = null;
+const occupiedSlots = ['09:00','09:30','10:00','10:30','11:00','14:00','14:30','15:00'];
+function renderTurnSlots() {
+    const grid = document.getElementById('turnGrid');
+    const hours = []; for(let h=6;h<=20;h++){hours.push(`${String(h).padStart(2,'0')}:00`);hours.push(`${String(h).padStart(2,'0')}:30`);}
+    grid.innerHTML = hours.map(h => {
+        const occ = occupiedSlots.includes(h); const sel = selectedSlot === h;
+        return `<button onclick="${occ?'':`selectSlot('${h}')`}" class="turn-slot p-3 border rounded-xl text-center text-sm font-medium ${occ?'occupied border-slate-200 text-slate-400':sel?'selected border-brand-500':'border-slate-200 text-slate-700'}">${h}${occ?'<br><span class="text-[10px]">Ocupado</span>':''}</button>`;
+    }).join('');
+}
+function selectSlot(h) { selectedSlot = h; renderTurnSlots(); document.getElementById('turnFormWrap').classList.remove('hidden'); }
+function cancelTurno() { selectedSlot = null; renderTurnSlots(); document.getElementById('turnFormWrap').classList.add('hidden'); }
+function confirmTurno() {
+    const ref = 'TRN-' + (4530 + Math.floor(Math.random()*100));
+    const newTurn = {ref, date: document.getElementById('turnDate').value || new Date().toISOString().split('T')[0], time: selectedSlot, terminal: document.getElementById('turnTerminal').value, veh: currentRole==='conductor'?'1234-ABC':document.getElementById('turnVehicle')?.value, status:'programado'};
+    if(currentRole==='conductor') conductorTurns.unshift(newTurn);
+    allTurns.unshift(newTurn);
+    occupiedSlots.push(selectedSlot);
+    cancelTurno(); renderAll(); lucide.createIcons(); showToast(`Turno ${ref} reservado para las ${selectedSlot}`);
+}
+
+// ====== NAVIGATION ======
+function showPage(page) {
+    const role = ROLES[currentRole];
+    if (!role.pages.includes(page)) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById('page-restricted').classList.add('active');
+        document.getElementById('restrictedMsg').textContent = `No tienes permisos para acceder a "${pageLabels[page]}". Tu rol (${role.label}) no incluye esta funcionalidad. Contacta con el administrador si necesitas acceso.`;
+        document.getElementById('pageTitle').textContent = 'Acceso restringido';
+        closeSidebar(); return;
+    }
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-'+page).classList.add('active');
+    document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+    document.querySelector(`.sidebar-link[data-page="${page}"]`)?.classList.add('active');
+    document.getElementById('pageTitle').textContent = pageLabels[page] || page;
+    closeSidebar();
+    if(page==='turnos'){const d=new Date();document.getElementById('turnDate').value=d.toISOString().split('T')[0];renderTurnSlots();}
+}
+
+// ====== SIDEBAR ======
+function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sidebarOverlay').classList.toggle('hidden');}
+function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sidebarOverlay').classList.add('hidden');}
+
+// ====== MODALS ======
+function openModal(id){document.getElementById(id).classList.add('active');}
+function closeModal(id){document.getElementById(id).classList.remove('active');}
+document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeModal(m.id);}));
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.modal-bg.active').forEach(m=>closeModal(m.id));});
+
+// ====== ACTIONS ======
+function addVehicle(e){e.preventDefault();closeModal('vehicleModal');fleet.unshift({plate:e.target[0].value,type:e.target[1].value,driver:e.target[2].value,status:'disponible',last:'Nunca'});renderAll();lucide.createIcons();showToast('Vehículo añadido');e.target.reset();}
+function addUser(e){e.preventDefault();closeModal('userModal');users.unshift({name:e.target[0].value,email:e.target[1].value,role:e.target[2].value,status:'activo',last:'Nunca'});renderAll();lucide.createIcons();showToast('Invitación enviada');e.target.reset();}
+function searchContainer(){showToast('Rastreando contenedor...');}
+function optimizeRoute(){showToast('Calculando ruta óptima con IA...');}
+function showToast(msg){const t=document.getElementById('toast');document.getElementById('toastMsg').textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3500);}
+
+// ====== INIT ======
+lucide.createIcons();
+</script>
+</body>
+</html>
