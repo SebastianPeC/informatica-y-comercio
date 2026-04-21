@@ -3,368 +3,1367 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PortTech | Software de Gestión y Logística Portuaria</title>
+    <title>PortWeb — Gestión inteligente para el ecosistema portuario</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
                     colors: {
-                        portblue: '#0a192f',
-                        portlight: '#f8fafc',
-                        portaccent: '#fbbf24',
-                        portgray: '#64748b'
+                        brand: {
+                            50: '#fff7ed',
+                            100: '#ffedd5',
+                            200: '#fed7aa',
+                            300: '#fdba74',
+                            400: '#fb923c',
+                            500: '#f97316',
+                            600: '#ea580c',
+                            700: '#c2410c',
+                            800: '#9a3412',
+                            900: '#7c2d12',
+                            950: '#431407',
+                        }
                     }
                 }
             }
         }
     </script>
+    <style>
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #f97316; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #ea580c; }
+
+        @keyframes spin-slow { to { transform: rotate(360deg); } }
+        @keyframes spin-slow-reverse { to { transform: rotate(-360deg); } }
+        @keyframes float { 0%,100% { transform: translateY(0px); } 50% { transform: translateY(-12px); } }
+        @keyframes pulse-glow { 0%,100% { opacity: 0.3; } 50% { opacity: 0.6; } }
+        @keyframes slide-up { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+
+        .animate-spin-slow { animation: spin-slow 10s linear infinite; }
+        .animate-spin-slow-reverse { animation: spin-slow-reverse 15s linear infinite; }
+        .animate-float { animation: float 4s ease-in-out infinite; }
+        .animate-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
+
+        .reveal { opacity: 0; transform: translateY(40px); transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+        .reveal.active { opacity: 1; transform: translateY(0); }
+        .reveal-left { opacity: 0; transform: translateX(-40px); transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+        .reveal-left.active { opacity: 1; transform: translateX(0); }
+        .reveal-right { opacity: 0; transform: translateX(40px); transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1); }
+        .reveal-right.active { opacity: 1; transform: translateX(0); }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #ea580c, #f97316, #fb923c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .card-hover { transition: all 0.4s ease; }
+        .card-hover:hover { transform: translateY(-6px); border-color: rgba(249,115,22,0.4); box-shadow: 0 25px 50px -12px rgba(249,115,22,0.15); }
+
+        .plan-card { transition: all 0.4s ease; }
+        .plan-card:hover { transform: translateY(-8px); }
+        .plan-featured { position: relative; }
+        .plan-featured::before {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, #f97316, #fb923c, #f97316);
+            z-index: -1;
+            animation: pulse-glow 3s ease-in-out infinite;
+        }
+
+        .toast {
+            position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+            padding: 16px 24px; border-radius: 12px;
+            background: #1e293b; border: 1px solid rgba(249,115,22,0.3);
+            color: white; font-size: 14px;
+            transform: translateY(100px); opacity: 0;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+
+        .modal-overlay {
+            position: fixed; inset: 0; z-index: 100;
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(8px);
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: all; }
+        .modal-content {
+            background: #ffffff; border: 1px solid #e2e8f0; border-radius: 24px;
+            padding: 40px; max-width: 480px; width: 90%;
+            transform: scale(0.9); transition: transform 0.3s ease;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15);
+        }
+        .modal-overlay.active .modal-content { transform: scale(1); }
+
+        .tab-btn { transition: all 0.3s ease; }
+        .tab-btn.active { background: #f97316; color: white; border-color: #f97316; }
+
+        .blog-card img { transition: transform 0.7s ease, filter 0.7s ease; }
+        .blog-card:hover img { transform: scale(1.08); filter: brightness(1.05); }
+
+        .process-step { counter-increment: step; }
+        .process-step .step-number::before { content: counter(step); }
+        .process-steps { counter-reset: step; }
+    </style>
 </head>
-<body class="bg-white text-gray-800 font-sans antialiased selection:bg-portaccent selection:text-portblue">
+<body class="bg-white text-slate-900 font-sans antialiased overflow-x-hidden">
 
-    <header class="bg-portblue text-white sticky top-0 z-50 shadow-lg">
-        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
-            <div class="text-2xl font-extrabold tracking-tighter flex items-center">
-                <i class="fas fa-ship text-portaccent mr-2"></i> PortTech<span class="text-portaccent">.</span>
-            </div>
-            <nav class="hidden lg:flex space-x-8 text-sm font-medium">
-                <a href="#soluciones" class="hover:text-portaccent transition">Para Quién</a>
-                <a href="#funcionalidades" class="hover:text-portaccent transition">Funcionalidades</a>
-                <a href="#ia-rutas" class="hover:text-portaccent transition">Rutas IA</a>
-                <a href="#integraciones" class="hover:text-portaccent transition">Integraciones</a>
-                <a href="#planes" class="hover:text-portaccent transition">Precios</a>
-            </nav>
-            <div class="hidden md:flex space-x-4 items-center">
-                <a href="#" class="text-sm font-medium hover:text-portaccent transition">Iniciar Sesión</a>
-                <a href="#planes" class="bg-portaccent text-portblue px-5 py-2.5 rounded-md font-bold hover:bg-yellow-400 transition transform hover:scale-105">Reservar Demo</a>
-            </div>
-            <button class="lg:hidden text-white text-2xl"><i class="fas fa-bars"></i></button>
+    <!-- Toast -->
+    <div id="toast" class="toast">
+        <div class="flex items-center gap-3">
+            <i data-lucide="check-circle" class="w-5 h-5 text-brand-400"></i>
+            <span id="toast-message">Mensaje enviado</span>
         </div>
-    </header>
+    </div>
 
-    <section class="bg-portblue text-white py-24 relative overflow-hidden">
-        <div class="absolute inset-0 opacity-20 bg-[url('https://images.unsplash.com/photo-1578575437130-527eed3abbec?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center"></div>
-        <div class="container mx-auto px-6 relative z-10 grid lg:grid-cols-2 gap-12 items-center">
-            <div>
-                <div class="inline-block bg-white/10 px-4 py-1.5 rounded-full text-sm font-medium text-portaccent mb-6 backdrop-blur-sm border border-white/20">
-                    <i class="fas fa-bolt mr-2"></i> Nuevo Módulo de Predicción IA
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-semibold text-slate-900">Iniciar sesión</h3>
+                <button onclick="closeModal('loginModal')" class="text-slate-400 hover:text-slate-700 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm text-slate-500 mb-2">Correo electrónico</label>
+                        <input type="email" required placeholder="usuario@empresa.com"
+                            class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-slate-500 mb-2">Contraseña</label>
+                        <div class="relative">
+                            <input type="password" id="loginPassword" required placeholder="••••••••"
+                                class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition-all">
+                            <button type="button" onclick="togglePassword('loginPassword', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" class="accent-brand-500 w-4 h-4">
+                            <span class="text-sm text-slate-500">Recordarme</span>
+                        </label>
+                        <a href="#" class="text-sm text-brand-600 hover:text-brand-700 transition-colors">¿Olvidaste tu contraseña?</a>
+                    </div>
+                    <button type="submit" class="w-full bg-brand-500 hover:bg-brand-600 text-white font-semibold py-3 rounded-lg transition-all duration-150 hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-brand-500/25">
+                        Acceder a PortWeb
+                    </button>
+                    <p class="text-center text-sm text-slate-400">
+                        ¿No tienes cuenta? <a href="#" onclick="closeModal('loginModal');openModal('registerModal');return false;" class="text-brand-600 hover:text-brand-700 font-medium">Regístrate</a>
+                    </p>
                 </div>
-                <h1 class="text-5xl md:text-6xl font-extrabold mb-6 leading-tight">Gestión inteligente para el ecosistema portuario.</h1>
-                <p class="text-xl text-gray-300 mb-8 max-w-lg">Conecta transportistas, terminales y operadores. Reduce la congestión hasta un 50%, automatiza facturación y optimiza cada viaje con rutas predictivas.</p>
-                <div class="flex flex-col sm:flex-row gap-4">
-                    <a href="#planes" class="bg-portaccent text-portblue px-8 py-4 rounded-md font-bold text-lg hover:bg-yellow-400 transition text-center shadow-[0_0_20px_rgba(251,191,36,0.3)]">Comienza Gratis</a>
-                    <a href="#ia-rutas" class="bg-transparent border border-gray-400 hover:border-white hover:bg-white/5 px-8 py-4 rounded-md font-bold text-lg transition text-center">Descubre la IA</a>
+            </form>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div id="registerModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-semibold text-slate-900">Crear cuenta</h3>
+                <button onclick="closeModal('registerModal')" class="text-slate-400 hover:text-slate-700 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <form id="registerForm" onsubmit="handleRegister(event)">
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm text-slate-500 mb-2">Nombre</label>
+                            <input type="text" required placeholder="Juan"
+                                class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-slate-500 mb-2">Apellido</label>
+                            <input type="text" required placeholder="García"
+                                class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition-all">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-slate-500 mb-2">Empresa</label>
+                        <select required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-slate-900 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition-all">
+                            <option value="" class="text-slate-400">Selecciona tu perfil</option>
+                            <option>Transportista</option>
+                            <option>Operador Logístico</option>
+                            <option>Terminal Portuaria</option>
+                            <option>Agencia de Carga</option>
+                            <option>Importador / Exportador</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm text-slate-500 mb-2">Correo electrónico</label>
+                        <input type="email" required placeholder="usuario@empresa.com"
+                            class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-slate-500 mb-2">Contraseña</label>
+                        <div class="relative">
+                            <input type="password" id="registerPassword" required placeholder="Mínimo 8 caracteres"
+                                class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition-all">
+                            <button type="button" onclick="togglePassword('registerPassword', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <label class="flex items-start gap-2 cursor-pointer">
+                        <input type="checkbox" required class="accent-brand-500 w-4 h-4 mt-1">
+                        <span class="text-sm text-slate-500">Acepto los <a href="#" class="text-brand-600 hover:text-brand-700 font-medium">términos y condiciones</a> y la <a href="#" class="text-brand-600 hover:text-brand-700 font-medium">política de privacidad</a></span>
+                    </label>
+                    <button type="submit" class="w-full bg-brand-500 hover:bg-brand-600 text-white font-semibold py-3 rounded-lg transition-all duration-150 hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-brand-500/25">
+                        Crear cuenta
+                    </button>
+                    <p class="text-center text-sm text-slate-400">
+                        ¿Ya tienes cuenta? <a href="#" onclick="closeModal('registerModal');openModal('loginModal');return false;" class="text-brand-600 hover:text-brand-700 font-medium">Inicia sesión</a>
+                    </p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <a href="#inicio" class="flex items-center gap-3 group">
+                <div class="w-10 h-10 bg-brand-500 rounded-xl flex items-center justify-center group-hover:bg-brand-600 transition-colors duration-300 shadow-lg shadow-brand-500/25">
+                    <i data-lucide="anchor" class="w-5 h-5 text-white"></i>
+                </div>
+                <div>
+                    <span class="text-lg font-bold tracking-tight text-slate-900">Port<span class="text-brand-500">Web</span></span>
+                    <span class="hidden sm:block text-[10px] uppercase tracking-widest text-slate-400 -mt-1">by PortTech</span>
+                </div>
+            </a>
+            <div class="hidden lg:flex items-center gap-8">
+                <a href="#problema" class="text-sm font-medium text-slate-500 hover:text-brand-500 transition-colors duration-150">Problema</a>
+                <a href="#solucion" class="text-sm font-medium text-slate-500 hover:text-brand-500 transition-colors duration-150">Solución</a>
+                <a href="#funcionalidades" class="text-sm font-medium text-slate-500 hover:text-brand-500 transition-colors duration-150">Funcionalidades</a>
+                <a href="#proceso" class="text-sm font-medium text-slate-500 hover:text-brand-500 transition-colors duration-150">Proceso</a>
+                <a href="#publico" class="text-sm font-medium text-slate-500 hover:text-brand-500 transition-colors duration-150">Público</a>
+                <a href="#planes" class="text-sm font-medium text-slate-500 hover:text-brand-500 transition-colors duration-150">Planes</a>
+                <a href="#seguridad" class="text-sm font-medium text-slate-500 hover:text-brand-500 transition-colors duration-150">Seguridad</a>
+                <a href="#blog" class="text-sm font-medium text-slate-500 hover:text-brand-500 transition-colors duration-150">Blog</a>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="openModal('loginModal')" class="hidden md:inline-flex text-sm font-medium text-slate-600 hover:text-brand-500 transition-colors duration-150 px-4 py-2">
+                    Iniciar sesión
+                </button>
+                <button onclick="openModal('registerModal')" class="hidden md:inline-flex bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold px-6 py-2.5 rounded-lg transition-all duration-150 hover:scale-105 active:scale-95 shadow-lg shadow-brand-500/25">
+                    Prueba gratis
+                </button>
+                <button id="menuToggle" class="lg:hidden text-slate-600 hover:text-slate-900 p-2" onclick="toggleMobile()">
+                    <i data-lucide="menu" class="w-6 h-6"></i>
+                </button>
+            </div>
+        </div>
+        <div id="mobileMenu" class="lg:hidden hidden bg-white/95 backdrop-blur-xl border-t border-slate-200">
+            <div class="px-6 py-6 space-y-1">
+                <a href="#problema" onclick="closeMobile()" class="block py-3 text-slate-600 hover:text-brand-500 transition-colors">Problema</a>
+                <a href="#solucion" onclick="closeMobile()" class="block py-3 text-slate-600 hover:text-brand-500 transition-colors">Solución</a>
+                <a href="#funcionalidades" onclick="closeMobile()" class="block py-3 text-slate-600 hover:text-brand-500 transition-colors">Funcionalidades</a>
+                <a href="#proceso" onclick="closeMobile()" class="block py-3 text-slate-600 hover:text-brand-500 transition-colors">Proceso</a>
+                <a href="#publico" onclick="closeMobile()" class="block py-3 text-slate-600 hover:text-brand-500 transition-colors">Público</a>
+                <a href="#planes" onclick="closeMobile()" class="block py-3 text-slate-600 hover:text-brand-500 transition-colors">Planes</a>
+                <a href="#seguridad" onclick="closeMobile()" class="block py-3 text-slate-600 hover:text-brand-500 transition-colors">Seguridad</a>
+                <a href="#blog" onclick="closeMobile()" class="block py-3 text-slate-600 hover:text-brand-500 transition-colors">Blog</a>
+                <div class="pt-4 border-t border-slate-200 flex flex-col gap-3">
+                    <button onclick="closeMobile();openModal('loginModal')" class="w-full py-3 text-center border border-slate-200 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">Iniciar sesión</button>
+                    <button onclick="closeMobile();openModal('registerModal')" class="w-full py-3 text-center bg-brand-500 rounded-lg text-sm font-semibold text-white hover:bg-brand-600 transition-colors shadow-lg shadow-brand-500/25">Prueba gratis</button>
                 </div>
             </div>
-            <div class="hidden lg:block relative">
-                <div class="absolute -inset-4 bg-portaccent/10 rounded-full blur-3xl z-0"></div>
-                <div class="relative z-10">
-                    <img src="WhatsApp Image 2026-04-05 at 17.34.44.jpeg" alt="Logística Portuaria" class="rounded-xl shadow-2xl border border-white/10 w-full transition duration-500 hover:scale-[1.02]">
+        </div>
+    </nav>
+
+    <!-- HERO -->
+    <section id="inicio" class="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-white via-brand-50/50 to-orange-50/30">
+        <div class="absolute inset-0">
+            <img src="https://picsum.photos/seed/port-panoramic-light/1920/1080.jpg" alt="Puerto" class="w-full h-full object-cover opacity-15">
+            <div class="absolute inset-0 bg-gradient-to-b from-white/80 via-white/60 to-white"></div>
+        </div>
+        <div class="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-brand-500/8 rounded-full blur-[128px] animate-pulse-glow"></div>
+        <div class="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-orange-300/10 rounded-full blur-[128px] animate-pulse-glow" style="animation-delay:1.5s"></div>
+
+        <div class="absolute top-32 right-20 hidden lg:block">
+            <div class="w-32 h-32 border border-brand-500/15 rounded-full animate-spin-slow"></div>
+            <div class="absolute inset-4 border border-orange-300/10 rounded-full animate-spin-slow-reverse"></div>
+        </div>
+        <div class="absolute bottom-40 left-16 hidden lg:block">
+            <div class="w-20 h-20 border border-brand-500/10 rounded-full animate-spin-slow-reverse"></div>
+        </div>
+
+        <div class="relative z-10 max-w-7xl mx-auto px-6 text-center pt-20">
+            <div class="inline-flex items-center gap-2 bg-brand-500/10 border border-brand-500/20 rounded-full px-4 py-2 mb-8" style="animation: slide-up 0.8s ease forwards;">
+                <i data-lucide="zap" class="w-4 h-4 text-brand-500"></i>
+                <span class="text-xs font-semibold uppercase tracking-wider text-brand-600">Plataforma SaaS de gestión portuaria</span>
+            </div>
+
+            <h1 class="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight leading-[1.05] mb-6 text-slate-900" style="animation: slide-up 0.8s ease 0.1s both;">
+                Gestión inteligente<br>
+                <span class="gradient-text">para el ecosistema</span><br>
+                portuario
+            </h1>
+
+            <p class="text-lg md:text-xl text-slate-500 font-light leading-relaxed max-w-2xl mx-auto mb-10" style="animation: slide-up 0.8s ease 0.2s both;">
+                Transformando la logística portuaria con tecnología digital. Conectamos a todos los actores del puerto en un único entorno digital.
+            </p>
+
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16" style="animation: slide-up 0.8s ease 0.3s both;">
+                <button onclick="openModal('registerModal')" class="group bg-brand-500 hover:bg-brand-600 text-white font-semibold px-8 py-4 rounded-xl transition-all duration-150 hover:scale-105 active:scale-95 flex items-center gap-2 shadow-xl shadow-brand-500/30">
+                    Comenzar gratis
+                    <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+                </button>
+                <a href="#demo" class="group border-2 border-slate-200 hover:border-brand-500/40 text-slate-700 font-semibold px-8 py-4 rounded-xl transition-all duration-150 hover:bg-brand-50 flex items-center gap-2">
+                    <i data-lucide="play-circle" class="w-5 h-5 text-brand-500"></i>
+                    Ver demo
+                </a>
+            </div>
+
+            <div class="grid grid-cols-3 gap-8 max-w-xl mx-auto" style="animation: slide-up 0.8s ease 0.4s both;">
+                <div class="text-center">
+                    <div class="text-2xl md:text-3xl font-bold text-slate-900 counter" data-target="45">0</div>
+                    <div class="text-xs text-slate-400 uppercase tracking-wider mt-1">% menos espera</div>
                 </div>
+                <div class="text-center border-x border-slate-200 px-4">
+                    <div class="text-2xl md:text-3xl font-bold text-slate-900 counter" data-target="1200">0</div>
+                    <div class="text-xs text-slate-400 uppercase tracking-wider mt-1">Turnos/día</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl md:text-3xl font-bold text-slate-900 counter" data-target="98">0</div>
+                    <div class="text-xs text-slate-400 uppercase tracking-wider mt-1">% satisfacción</div>
+                </div>
+            </div>
+
+            <div class="mt-16 animate-float">
+                <a href="#problema" class="inline-flex flex-col items-center gap-2 text-slate-300 hover:text-slate-400 transition-colors">
+                    <span class="text-[10px] uppercase tracking-widest">Descubre más</span>
+                    <i data-lucide="chevron-down" class="w-5 h-5"></i>
+                </a>
             </div>
         </div>
     </section>
 
-    <section class="border-b border-gray-100 bg-white py-10">
-        <div class="container mx-auto px-6">
-            <p class="text-center text-sm font-semibold text-gray-400 tracking-widest uppercase mb-6">Confían en nuestra plataforma operando en puertos internacionales</p>
-            <div class="flex flex-wrap justify-center gap-12 opacity-50 grayscale">
-                <div class="flex items-center text-2xl font-bold"><i class="fas fa-water mr-2"></i> OceanLogistics</div>
-                <div class="flex items-center text-2xl font-bold"><i class="fas fa-truck-moving mr-2"></i> TransPort</div>
-                <div class="flex items-center text-2xl font-bold"><i class="fas fa-box mr-2"></i> CargoMaersk</div>
-                <div class="flex items-center text-2xl font-bold"><i class="fas fa-anchor mr-2"></i> PortAuth</div>
+    <!-- PROBLEMA -->
+    <section id="problema" class="relative py-24 md:py-32 overflow-hidden bg-slate-50">
+        <div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-brand-500/30 to-transparent"></div>
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16 reveal">
+                <span class="inline-block text-xs font-semibold uppercase tracking-widest text-brand-500 mb-4">El problema</span>
+                <h2 class="text-3xl md:text-5xl font-bold tracking-tight mb-6 text-slate-900">La congestión tiene un<br><span class="gradient-text">coste real</span></h2>
+                <p class="text-slate-500 font-light max-w-2xl mx-auto text-lg">Los procesos manuales y desconectados generan ineficiencias que impactan directamente en la rentabilidad.</p>
             </div>
-        </div>
-    </section>
 
-    <section id="soluciones" class="py-24 bg-portlight">
-        <div class="container mx-auto px-6">
-            <div class="text-center max-w-3xl mx-auto mb-16">
-                <h2 class="text-3xl md:text-4xl font-bold text-portblue mb-4">Una plataforma, soluciones para todos</h2>
-                <p class="text-portgray text-lg">PortTech unifica a todos los actores de la cadena de suministro portuaria en un solo ecosistema en la nube.</p>
-            </div>
-            
             <div class="grid md:grid-cols-3 gap-8">
-                <div class="bg-white p-8 rounded-2xl shadow-sm hover:shadow-xl transition duration-300 border border-gray-100">
-                    <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center text-2xl mb-6">
-                        <i class="fas fa-truck"></i>
+                <div class="reveal group card-hover bg-white border border-slate-100 rounded-2xl p-8 relative overflow-hidden shadow-sm" style="transition-delay: 0.1s;">
+                    <div class="absolute -top-16 -right-16 w-32 h-32 bg-red-500/5 rounded-full blur-3xl group-hover:bg-red-500/10 transition-all duration-500"></div>
+                    <div class="relative">
+                        <div class="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                            <i data-lucide="alert-triangle" class="w-7 h-7 text-red-500"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-3 text-slate-900">Cuellos de botella</h3>
+                        <p class="text-slate-500 font-light leading-relaxed">Accesos saturados y tiempos de espera imprevisibles que generan retrasos en cadena y afectan la productividad general.</p>
+                        <div class="mt-6 flex items-center gap-2 text-red-500 text-sm font-medium">
+                            <i data-lucide="trending-up" class="w-4 h-4"></i>
+                            <span>+35% de tiempo perdido en accesos</span>
+                        </div>
                     </div>
-                    <h3 class="text-xl font-bold text-portblue mb-3">Para Transportistas</h3>
-                    <p class="text-gray-600 mb-6 text-sm">Reserva turnos de entrada, recibe rutas alternas para evitar tráfico, gestiona tu flota de camiones y factura automáticamente tus servicios.</p>
-                    <ul class="space-y-2 text-sm text-gray-500 mb-6">
-                        <li><i class="fas fa-check text-green-500 mr-2"></i> App móvil para conductores</li>
-                        <li><i class="fas fa-check text-green-500 mr-2"></i> Rutas predictivas</li>
-                        <li><i class="fas fa-check text-green-500 mr-2"></i> Portal de pagos integrados</li>
-                    </ul>
                 </div>
-                <div class="bg-white p-8 rounded-2xl shadow-sm hover:shadow-xl transition duration-300 border border-gray-100 relative overflow-hidden">
-                    <div class="absolute top-0 right-0 bg-portaccent text-xs font-bold px-3 py-1 rounded-bl-lg">NUEVO</div>
-                    <div class="w-14 h-14 bg-yellow-50 text-portaccent rounded-xl flex items-center justify-center text-2xl mb-6">
-                        <i class="fas fa-building"></i>
+
+                <div class="reveal group card-hover bg-white border border-slate-100 rounded-2xl p-8 relative overflow-hidden shadow-sm" style="transition-delay: 0.2s;">
+                    <div class="absolute -top-16 -right-16 w-32 h-32 bg-orange-500/5 rounded-full blur-3xl group-hover:bg-orange-500/10 transition-all duration-500"></div>
+                    <div class="relative">
+                        <div class="w-14 h-14 rounded-2xl bg-orange-50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                            <i data-lucide="euro" class="w-7 h-7 text-orange-500"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-3 text-slate-900">Costes operativos</h3>
+                        <p class="text-slate-500 font-light leading-relaxed">Retrasos que se traducen en pérdidas directas: combustible, horas de conducción improductivas y penalizaciones contractuales.</p>
+                        <div class="mt-6 flex items-center gap-2 text-orange-500 text-sm font-medium">
+                            <i data-lucide="trending-down" class="w-4 h-4"></i>
+                            <span>-18% de margen por ineficiencia</span>
+                        </div>
                     </div>
-                    <h3 class="text-xl font-bold text-portblue mb-3">Para Terminales y Puertos</h3>
-                    <p class="text-gray-600 mb-6 text-sm">Controla el flujo vehicular, balancea la capacidad de atención en puertas y comunícate masivamente con la comunidad logística.</p>
-                    <ul class="space-y-2 text-sm text-gray-500 mb-6">
-                        <li><i class="fas fa-check text-green-500 mr-2"></i> Dashboard de congestión</li>
-                        <li><i class="fas fa-check text-green-500 mr-2"></i> Control de accesos QR</li>
-                        <li><i class="fas fa-check text-green-500 mr-2"></i> Analítica de tiempos de espera</li>
-                    </ul>
                 </div>
-                <div class="bg-white p-8 rounded-2xl shadow-sm hover:shadow-xl transition duration-300 border border-gray-100">
-                    <div class="w-14 h-14 bg-green-50 text-green-600 rounded-xl flex items-center justify-center text-2xl mb-6">
-                        <i class="fas fa-file-contract"></i>
+
+                <div class="reveal group card-hover bg-white border border-slate-100 rounded-2xl p-8 relative overflow-hidden shadow-sm" style="transition-delay: 0.3s;">
+                    <div class="absolute -top-16 -right-16 w-32 h-32 bg-amber-500/5 rounded-full blur-3xl group-hover:bg-amber-500/10 transition-all duration-500"></div>
+                    <div class="relative">
+                        <div class="w-14 h-14 rounded-2xl bg-amber-50 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                            <i data-lucide="unlink" class="w-7 h-7 text-amber-500"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold mb-3 text-slate-900">Sin coordinación digital</h3>
+                        <p class="text-slate-500 font-light leading-relaxed">Procesos manuales y desconectados entre actores portuarios que impiden una gestión eficiente y en tiempo real.</p>
+                        <div class="mt-6 flex items-center gap-2 text-amber-500 text-sm font-medium">
+                            <i data-lucide="file-x" class="w-4 h-4"></i>
+                            <span>70% procesos aún en papel</span>
+                        </div>
                     </div>
-                    <h3 class="text-xl font-bold text-portblue mb-3">Para Agencias y 3PL</h3>
-                    <p class="text-gray-600 mb-6 text-sm">Contrata servicios logísticos, rastrea contenedores en tiempo real y centraliza toda la documentación aduanera en un solo lugar.</p>
-                    <ul class="space-y-2 text-sm text-gray-500 mb-6">
-                        <li><i class="fas fa-check text-green-500 mr-2"></i> Trazabilidad GPS</li>
-                        <li><i class="fas fa-check text-green-500 mr-2"></i> Gestión documental cloud</li>
-                        <li><i class="fas fa-check text-green-500 mr-2"></i> Integración con ERPs</li>
-                    </ul>
                 </div>
             </div>
         </div>
     </section>
 
-    <section id="ia-rutas" class="py-24 bg-white relative">
-        <div class="container mx-auto px-6">
-            <div class="flex flex-col lg:flex-row items-center gap-16">
-                <div class="lg:w-1/2">
-                    <h2 class="text-portaccent font-bold tracking-wider uppercase text-sm mb-2">Tecnología Core</h2>
-                    <h3 class="text-3xl md:text-4xl font-bold text-portblue mb-6">Elimina el tráfico portuario con IA.</h3>
-                    <p class="text-lg text-portgray mb-8">No más filas interminables en los accesos. Nuestro motor de Inteligencia Artificial analiza datos en tiempo real para agendar, predecir y desviar.</p>
-                    
+    <!-- SOLUCIÓN -->
+    <section id="solucion" class="relative py-24 md:py-32 overflow-hidden bg-white">
+        <div class="absolute top-1/2 right-0 w-[600px] h-[600px] bg-brand-500/5 rounded-full blur-[128px] -translate-y-1/2"></div>
+
+        <div class="relative max-w-7xl mx-auto px-6">
+            <div class="grid lg:grid-cols-2 gap-16 items-center">
+                <div class="reveal-left">
+                    <span class="inline-block text-xs font-semibold uppercase tracking-widest text-brand-500 mb-4">La solución</span>
+                    <h2 class="text-3xl md:text-5xl font-bold tracking-tight mb-6 text-slate-900">PortWeb: el ecosistema<br><span class="gradient-text">digital unificado</span></h2>
+                    <p class="text-slate-500 font-light leading-relaxed text-lg mb-8">
+                        Una plataforma SaaS que conecta a todos los actores del puerto en un único entorno digital, eliminando fricciones y optimizando cada operación.
+                    </p>
+
                     <div class="space-y-6">
-                        <div class="flex">
-                            <div class="mt-1 bg-blue-50 w-10 h-10 rounded-full flex items-center justify-center text-blue-600 shrink-0"><i class="fas fa-calendar-check"></i></div>
-                            <div class="ml-4">
-                                <h4 class="text-xl font-bold text-portblue">Agendamiento Dinámico</h4>
-                                <p class="text-gray-600 mt-1">El sistema distribuye los turnos (slots) automáticamente para evitar picos de camiones en la misma franja horaria.</p>
+                        <div class="flex items-start gap-4 group">
+                            <div class="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center flex-shrink-0 group-hover:bg-brand-100 transition-colors">
+                                <i data-lucide="database" class="w-5 h-5 text-brand-500"></i>
                             </div>
-                        </div>
-                        <div class="flex">
-                            <div class="mt-1 bg-yellow-50 w-10 h-10 rounded-full flex items-center justify-center text-portaccent shrink-0"><i class="fas fa-brain"></i></div>
-                            <div class="ml-4">
-                                <h4 class="text-xl font-bold text-portblue">Rutas Alternas Anti-Congestión</h4>
-                                <p class="text-gray-600 mt-1">Si la vía principal colapsa, la app redirige a los conductores por rutas secundarias, <strong class="text-portblue">reduciendo el tiempo de viaje entre 30% y 50%</strong>.</p>
-                            </div>
-                        </div>
-                        <div class="flex">
-                            <div class="mt-1 bg-green-50 w-10 h-10 rounded-full flex items-center justify-center text-green-600 shrink-0"><i class="fas fa-bell"></i></div>
-                            <div class="ml-4">
-                                <h4 class="text-xl font-bold text-portblue">Comunicaciones Push y SMS</h4>
-                                <p class="text-gray-600 mt-1">Avisos automatizados al conductor sobre cambios de ruta, alertas climáticas o apertura de puertas.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="lg:w-1/2 w-full flex justify-center lg:justify-end">
-                    <div class="bg-gray-100 border-[10px] border-gray-900 rounded-[3rem] p-6 w-full max-w-sm shadow-2xl relative">
-                        <div class="w-24 h-7 bg-gray-900 absolute top-0 left-1/2 transform -translate-x-1/2 rounded-b-2xl"></div>
-                        
-                        <div class="flex justify-between items-center mt-6 mb-6">
                             <div>
-                                <h4 class="font-bold text-portblue text-lg">Hola, Carlos</h4>
-                                <p class="text-xs text-gray-500">Placa: ABC-123</p>
+                                <h4 class="font-semibold mb-1 text-slate-900">Centralización de datos</h4>
+                                <p class="text-slate-500 font-light text-sm">Toda la información operativa en un solo lugar, accesible desde cualquier dispositivo.</p>
                             </div>
-                            <img src="https://ui-avatars.com/api/?name=Carlos+C&background=0F2C59&color=fff" class="w-10 h-10 rounded-full">
                         </div>
-                        
-                        <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-5 relative overflow-hidden">
-                            <div class="absolute top-0 left-0 w-1 h-full bg-green-500"></div>
-                            <div class="flex justify-between items-center mb-3">
-                                <span class="text-xs font-bold tracking-wider text-gray-400">PRÓXIMO INGRESO</span>
-                                <span class="bg-green-100 text-green-700 text-[10px] px-2 py-1 rounded-full font-bold uppercase">Confirmado</span>
+                        <div class="flex items-start gap-4 group">
+                            <div class="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center flex-shrink-0 group-hover:bg-brand-100 transition-colors">
+                                <i data-lucide="radio" class="w-5 h-5 text-brand-500"></i>
                             </div>
-                            <div class="text-3xl font-extrabold text-portblue mb-1">14:30 HRS</div>
-                            <div class="text-sm text-gray-600 font-medium">Terminal Sur - Puerta 4</div>
+                            <div>
+                                <h4 class="font-semibold mb-1 text-slate-900">Coordinación en tiempo real</h4>
+                                <p class="text-slate-500 font-light text-sm">Sincronización instantánea entre transportistas, terminales y operadores.</p>
+                            </div>
                         </div>
+                        <div class="flex items-start gap-4 group">
+                            <div class="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center flex-shrink-0 group-hover:bg-brand-100 transition-colors">
+                                <i data-lucide="scaling" class="w-5 h-5 text-brand-500"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold mb-1 text-slate-900">Escalable por diseño</h4>
+                                <p class="text-slate-500 font-light text-sm">Arquitectura preparada para crecer con tus necesidades operativas.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                        <div class="bg-gradient-to-br from-red-50 to-orange-50 border border-red-100 rounded-2xl p-5 shadow-sm mb-6">
-                            <div class="flex items-center mb-3 text-red-600">
-                                <i class="fas fa-siren-on animate-pulse mr-2"></i>
-                                <span class="font-bold text-sm">Tráfico Severo Detectado</span>
+                <!-- Right - App screenshot -->
+                <div class="reveal-right">
+                    <div class="relative">
+                        <div class="absolute inset-0 bg-brand-500/10 rounded-2xl blur-3xl"></div>
+                        <div class="relative rounded-2xl overflow-hidden shadow-2xl border border-slate-200">
+                            <!-- Window bar -->
+                            <div class="flex items-center gap-2 px-4 py-3 bg-white border-b border-slate-200">
+                                <div class="w-3 h-3 rounded-full bg-red-400"></div>
+                                <div class="w-3 h-3 rounded-full bg-yellow-400"></div>
+                                <div class="w-3 h-3 rounded-full bg-green-400"></div>
+                                <span class="ml-3 text-xs text-slate-400">app.portweb.io/dashboard</span>
                             </div>
-                            <p class="text-xs text-red-800 mb-4 font-medium">+45 min de retraso en Vía Principal.</p>
-                            <div class="bg-white rounded-xl p-3 flex justify-between items-center shadow-sm cursor-pointer hover:bg-gray-50 transition border border-gray-100">
-                                <div>
-                                    <div class="text-[10px] text-gray-500 font-bold uppercase mb-1">Ruta IA Sugerida</div>
-                                    <div class="font-bold text-green-600 text-sm"><i class="fas fa-bolt"></i> Ahorra 35 mins</div>
+                            <!-- TU CAPTURA AQUÍ -->
+                            <img src="WhatsApp Image 2026-04-21 at 12.20.12.jpeg" 
+                                alt="PortWeb App Dashboard" 
+                                class="w-full h-auto object-cover"
+                                onerror="this.src='https://picsum.photos/seed/portweb-app/800/520.jpg'">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FUNCIONALIDADES -->
+    <section id="funcionalidades" class="relative py-24 md:py-32 bg-slate-50">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16 reveal">
+                <span class="inline-block text-xs font-semibold uppercase tracking-widest text-brand-500 mb-4">Demo visual</span>
+                <h2 class="text-3xl md:text-5xl font-bold tracking-tight mb-6 text-slate-900">Así funciona <span class="gradient-text">PortWeb</span></h2>
+                <p class="text-slate-500 font-light max-w-2xl mx-auto text-lg">Tres pilares tecnológicos que transforman la operación portuaria desde la reserva hasta la facturación.</p>
+            </div>
+
+            <div id="demo" class="grid md:grid-cols-3 gap-8">
+                <div class="reveal group card-hover bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm" style="transition-delay:0.1s">
+                    <div class="relative h-56 overflow-hidden">
+                        <img src="https://picsum.photos/seed/port-calendar/600/400.jpg" alt="Reserva de turnos" class="w-full h-full object-cover opacity-80 group-hover:opacity-90 group-hover:scale-105 transition-all duration-700">
+                        <div class="absolute inset-0 bg-gradient-to-t from-white via-white/50 to-transparent"></div>
+                        <div class="absolute top-4 left-4 w-12 h-12 bg-brand-500 rounded-xl flex items-center justify-center shadow-lg shadow-brand-500/30">
+                            <i data-lucide="calendar-check" class="w-6 h-6 text-white"></i>
+                        </div>
+                    </div>
+                    <div class="p-8">
+                        <h3 class="text-xl font-semibold mb-3 text-slate-900">Reserva de turnos online</h3>
+                        <p class="text-slate-500 font-light leading-relaxed mb-4">Sin colas, sin esperas. El transportista selecciona su franja horaria y recibe confirmación instantánea.</p>
+                        <ul class="space-y-2">
+                            <li class="flex items-center gap-2 text-sm text-slate-500"><i data-lucide="check" class="w-4 h-4 text-brand-500"></i>Calendario interactivo</li>
+                            <li class="flex items-center gap-2 text-sm text-slate-500"><i data-lucide="check" class="w-4 h-4 text-brand-500"></i>Confirmación automática</li>
+                            <li class="flex items-center gap-2 text-sm text-slate-500"><i data-lucide="check" class="w-4 h-4 text-brand-500"></i>Notificaciones en tiempo real</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="reveal group card-hover bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm" style="transition-delay:0.2s">
+                    <div class="relative h-56 overflow-hidden">
+                        <img src="https://picsum.photos/seed/ai-routes-map/600/400.jpg" alt="Optimización IA" class="w-full h-full object-cover opacity-80 group-hover:opacity-90 group-hover:scale-105 transition-all duration-700">
+                        <div class="absolute inset-0 bg-gradient-to-t from-white via-white/50 to-transparent"></div>
+                        <div class="absolute top-4 left-4 w-12 h-12 bg-brand-500 rounded-xl flex items-center justify-center shadow-lg shadow-brand-500/30">
+                            <i data-lucide="brain" class="w-6 h-6 text-white"></i>
+                        </div>
+                    </div>
+                    <div class="p-8">
+                        <h3 class="text-xl font-semibold mb-3 text-slate-900">Optimización de rutas con IA</h3>
+                        <p class="text-slate-500 font-light leading-relaxed mb-4">Algoritmos predictivos que analizan tráfico, meteorología y estado del puerto en tiempo real.</p>
+                        <ul class="space-y-2">
+                            <li class="flex items-center gap-2 text-sm text-slate-500"><i data-lucide="check" class="w-4 h-4 text-brand-500"></i>Análisis predictivo</li>
+                            <li class="flex items-center gap-2 text-sm text-slate-500"><i data-lucide="check" class="w-4 h-4 text-brand-500"></i>Rutas alternativas automáticas</li>
+                            <li class="flex items-center gap-2 text-sm text-slate-500"><i data-lucide="check" class="w-4 h-4 text-brand-500"></i>Ahorro de combustible</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="reveal group card-hover bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm" style="transition-delay:0.3s">
+                    <div class="relative h-56 overflow-hidden">
+                        <img src="https://picsum.photos/seed/container-track/600/400.jpg" alt="Trazabilidad" class="w-full h-full object-cover opacity-80 group-hover:opacity-90 group-hover:scale-105 transition-all duration-700">
+                        <div class="absolute inset-0 bg-gradient-to-t from-white via-white/50 to-transparent"></div>
+                        <div class="absolute top-4 left-4 w-12 h-12 bg-brand-500 rounded-xl flex items-center justify-center shadow-lg shadow-brand-500/30">
+                            <i data-lucide="package-search" class="w-6 h-6 text-white"></i>
+                        </div>
+                    </div>
+                    <div class="p-8">
+                        <h3 class="text-xl font-semibold mb-3 text-slate-900">Trazabilidad de contenedores</h3>
+                        <p class="text-slate-500 font-light leading-relaxed mb-4">Visibilidad completa del ciclo logístico desde el origen hasta la entrega final.</p>
+                        <ul class="space-y-2">
+                            <li class="flex items-center gap-2 text-sm text-slate-500"><i data-lucide="check" class="w-4 h-4 text-brand-500"></i>Tracking en tiempo real</li>
+                            <li class="flex items-center gap-2 text-sm text-slate-500"><i data-lucide="check" class="w-4 h-4 text-brand-500"></i>Historial completo</li>
+                            <li class="flex items-center gap-2 text-sm text-slate-500"><i data-lucide="check" class="w-4 h-4 text-brand-500"></i>Alertas de estado</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-16">
+                <div class="reveal card-hover bg-white border border-slate-100 rounded-xl p-6 text-center shadow-sm" style="transition-delay:0.1s">
+                    <div class="w-12 h-12 mx-auto mb-4 rounded-xl bg-brand-50 flex items-center justify-center">
+                        <i data-lucide="receipt" class="w-6 h-6 text-brand-500"></i>
+                    </div>
+                    <h4 class="font-semibold mb-2 text-sm text-slate-900">Facturación digital</h4>
+                    <p class="text-xs text-slate-500 font-light">Generación automática de facturas tras cada operación.</p>
+                </div>
+                <div class="reveal card-hover bg-white border border-slate-100 rounded-xl p-6 text-center shadow-sm" style="transition-delay:0.2s">
+                    <div class="w-12 h-12 mx-auto mb-4 rounded-xl bg-brand-50 flex items-center justify-center">
+                        <i data-lucide="bar-chart-3" class="w-6 h-6 text-brand-500"></i>
+                    </div>
+                    <h4 class="font-semibold mb-2 text-sm text-slate-900">Reportes operativos</h4>
+                    <p class="text-xs text-slate-500 font-light">Dashboards y reportes detallados para decisiones.</p>
+                </div>
+                <div class="reveal card-hover bg-white border border-slate-100 rounded-xl p-6 text-center shadow-sm" style="transition-delay:0.3s">
+                    <div class="w-12 h-12 mx-auto mb-4 rounded-xl bg-brand-50 flex items-center justify-center">
+                        <i data-lucide="truck" class="w-6 h-6 text-brand-500"></i>
+                    </div>
+                    <h4 class="font-semibold mb-2 text-sm text-slate-900">Control de flotas</h4>
+                    <p class="text-xs text-slate-500 font-light">Gestión completa de vehículos y conductores.</p>
+                </div>
+                <div class="reveal card-hover bg-white border border-slate-100 rounded-xl p-6 text-center shadow-sm" style="transition-delay:0.4s">
+                    <div class="w-12 h-12 mx-auto mb-4 rounded-xl bg-brand-50 flex items-center justify-center">
+                        <i data-lucide="users" class="w-6 h-6 text-brand-500"></i>
+                    </div>
+                    <h4 class="font-semibold mb-2 text-sm text-slate-900">Gestión de usuarios</h4>
+                    <p class="text-xs text-slate-500 font-light">Roles, permisos y control de acceso por perfil.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- PROCESO LOGÍSTICO -->
+    <section id="proceso" class="relative py-24 md:py-32 overflow-hidden bg-white">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16 reveal">
+                <span class="inline-block text-xs font-semibold uppercase tracking-widest text-brand-500 mb-4">Logística del servicio</span>
+                <h2 class="text-3xl md:text-5xl font-bold tracking-tight mb-6 text-slate-900">El proceso <span class="gradient-text">paso a paso</span></h2>
+                <p class="text-slate-500 font-light max-w-2xl mx-auto text-lg">Desde el registro del vehículo hasta la facturación automática, cada etapa está digitalizada.</p>
+            </div>
+
+            <div class="process-steps grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="reveal process-step" style="transition-delay:0.05s">
+                    <div class="bg-slate-50 border border-slate-100 rounded-2xl p-8 h-full card-hover">
+                        <div class="step-number w-10 h-10 rounded-full bg-brand-500 text-white font-bold text-sm flex items-center justify-center mb-5 shadow-lg shadow-brand-500/25"></div>
+                        <h4 class="font-semibold mb-2 text-slate-900">Registro del vehículo</h4>
+                        <p class="text-sm text-slate-500 font-light leading-relaxed">El transportista registra su vehículo con matrícula, tipo y empresa.</p>
+                    </div>
+                </div>
+                <div class="reveal process-step" style="transition-delay:0.1s">
+                    <div class="bg-slate-50 border border-slate-100 rounded-2xl p-8 h-full card-hover">
+                        <div class="step-number w-10 h-10 rounded-full bg-brand-500 text-white font-bold text-sm flex items-center justify-center mb-5 shadow-lg shadow-brand-500/25"></div>
+                        <h4 class="font-semibold mb-2 text-slate-900">Solicitud de turno</h4>
+                        <p class="text-sm text-slate-500 font-light leading-relaxed">El conductor solicita turno seleccionando fecha, hora y terminal.</p>
+                    </div>
+                </div>
+                <div class="reveal process-step" style="transition-delay:0.15s">
+                    <div class="bg-slate-50 border border-slate-100 rounded-2xl p-8 h-full card-hover">
+                        <div class="step-number w-10 h-10 rounded-full bg-brand-500 text-white font-bold text-sm flex items-center justify-center mb-5 shadow-lg shadow-brand-500/25"></div>
+                        <h4 class="font-semibold mb-2 text-slate-900">Asignación automática</h4>
+                        <p class="text-sm text-slate-500 font-light leading-relaxed">El sistema asigna horario disponible optimizando la capacidad.</p>
+                    </div>
+                </div>
+                <div class="reveal process-step" style="transition-delay:0.2s">
+                    <div class="bg-slate-50 border border-slate-100 rounded-2xl p-8 h-full card-hover">
+                        <div class="step-number w-10 h-10 rounded-full bg-brand-500 text-white font-bold text-sm flex items-center justify-center mb-5 shadow-lg shadow-brand-500/25"></div>
+                        <h4 class="font-semibold mb-2 text-slate-900">Optimización de rutas</h4>
+                        <p class="text-sm text-slate-500 font-light leading-relaxed">Análisis del tráfico en tiempo real y rutas más eficientes.</p>
+                    </div>
+                </div>
+                <div class="reveal process-step" style="transition-delay:0.25s">
+                    <div class="bg-slate-50 border border-slate-100 rounded-2xl p-8 h-full card-hover">
+                        <div class="step-number w-10 h-10 rounded-full bg-brand-500 text-white font-bold text-sm flex items-center justify-center mb-5 shadow-lg shadow-brand-500/25"></div>
+                        <h4 class="font-semibold mb-2 text-slate-900">Notificaciones en vivo</h4>
+                        <p class="text-sm text-slate-500 font-light leading-relaxed">Alertas instantáneas sobre cambios de turno o incidencias.</p>
+                    </div>
+                </div>
+                <div class="reveal process-step" style="transition-delay:0.3s">
+                    <div class="bg-slate-50 border border-slate-100 rounded-2xl p-8 h-full card-hover">
+                        <div class="step-number w-10 h-10 rounded-full bg-brand-500 text-white font-bold text-sm flex items-center justify-center mb-5 shadow-lg shadow-brand-500/25"></div>
+                        <h4 class="font-semibold mb-2 text-slate-900">Registro y facturación</h4>
+                        <p class="text-sm text-slate-500 font-light leading-relaxed">Registro de actividad y generación automática de facturación.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- PÚBLICO OBJETIVO -->
+    <section id="publico" class="relative py-24 md:py-32 bg-slate-50">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16 reveal">
+                <span class="inline-block text-xs font-semibold uppercase tracking-widest text-brand-500 mb-4">Público objetivo</span>
+                <h2 class="text-3xl md:text-5xl font-bold tracking-tight mb-6 text-slate-900">¿A quién <span class="gradient-text">servimos</span>?</h2>
+                <p class="text-slate-500 font-light max-w-2xl mx-auto text-lg">Cada perfil del ecosistema portuario encuentra las herramientas específicas que necesita.</p>
+            </div>
+
+            <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-6">
+                <div class="reveal card-hover bg-white border border-slate-100 rounded-2xl p-6 text-center group shadow-sm" style="transition-delay:0.05s">
+                    <div class="w-16 h-16 mx-auto mb-5 rounded-2xl bg-brand-50 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        <i data-lucide="truck" class="w-8 h-8 text-brand-500"></i>
+                    </div>
+                    <h4 class="font-semibold mb-2 text-slate-900 text-sm">Transportistas</h4>
+                    <p class="text-xs text-slate-500 font-light">Gestión de flotas y turnos de acceso.</p>
+                </div>
+                <div class="reveal card-hover bg-white border border-slate-100 rounded-2xl p-6 text-center group shadow-sm" style="transition-delay:0.1s">
+                    <div class="w-16 h-16 mx-auto mb-5 rounded-2xl bg-orange-50 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        <i data-lucide="warehouse" class="w-8 h-8 text-orange-500"></i>
+                    </div>
+                    <h4 class="font-semibold mb-2 text-slate-900 text-sm">Operadores Logísticos</h4>
+                    <p class="text-xs text-slate-500 font-light">Coordinación de almacenes.</p>
+                </div>
+                <div class="reveal card-hover bg-white border border-slate-100 rounded-2xl p-6 text-center group shadow-sm" style="transition-delay:0.15s">
+                    <div class="w-16 h-16 mx-auto mb-5 rounded-2xl bg-amber-50 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        <i data-lucide="building-2" class="w-8 h-8 text-amber-600"></i>
+                    </div>
+                    <h4 class="font-semibold mb-2 text-slate-900 text-sm">Terminales</h4>
+                    <p class="text-xs text-slate-500 font-light">Control operativo digital.</p>
+                </div>
+                <div class="reveal card-hover bg-white border border-slate-100 rounded-2xl p-6 text-center group shadow-sm" style="transition-delay:0.2s">
+                    <div class="w-16 h-16 mx-auto mb-5 rounded-2xl bg-brand-50 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        <i data-lucide="file-text" class="w-8 h-8 text-brand-600"></i>
+                    </div>
+                    <h4 class="font-semibold mb-2 text-slate-900 text-sm">Agencias de Carga</h4>
+                    <p class="text-xs text-slate-500 font-light">Documentación y seguimiento.</p>
+                </div>
+                <div class="reveal card-hover bg-white border border-slate-100 rounded-2xl p-6 text-center group shadow-sm" style="transition-delay:0.25s">
+                    <div class="w-16 h-16 mx-auto mb-5 rounded-2xl bg-orange-50 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        <i data-lucide="globe" class="w-8 h-8 text-orange-600"></i>
+                    </div>
+                    <h4 class="font-semibold mb-2 text-slate-900 text-sm">Importadores / Exportadores</h4>
+                    <p class="text-xs text-slate-500 font-light">Visibilidad de la cadena.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- PLANES -->
+    <section id="planes" class="relative py-24 md:py-32 overflow-hidden bg-white">
+        <div class="absolute top-1/2 left-0 w-[500px] h-[500px] bg-brand-500/5 rounded-full blur-[128px] -translate-y-1/2"></div>
+        <div class="absolute top-1/2 right-0 w-[500px] h-[500px] bg-orange-200/10 rounded-full blur-[128px] -translate-y-1/2"></div>
+
+        <div class="relative max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16 reveal">
+                <span class="inline-block text-xs font-semibold uppercase tracking-widest text-brand-500 mb-4">Modelo de negocio</span>
+                <h2 class="text-3xl md:text-5xl font-bold tracking-tight mb-6 text-slate-900">Monetización <span class="gradient-text">escalable</span></h2>
+                <p class="text-slate-500 font-light max-w-2xl mx-auto text-lg">Elige el plan que mejor se adapte al volumen de operaciones de tu empresa.</p>
+            </div>
+
+            <div class="flex items-center justify-center gap-4 mb-12 reveal">
+                <span class="text-sm text-slate-500" id="toggleLabel1">Pago por uso</span>
+                <button id="billingToggle" onclick="toggleBilling()" class="relative w-14 h-7 bg-slate-200 rounded-full transition-colors duration-300 border border-slate-200">
+                    <div id="toggleDot" class="absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full transition-transform duration-300 shadow-sm"></div>
+                </button>
+                <span class="text-sm text-slate-500" id="toggleLabel2">Suscripción</span>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                <div class="reveal plan-card bg-white border border-slate-200 rounded-2xl p-8 flex flex-col shadow-sm" style="transition-delay:0.1s" id="planBasico">
+                    <div class="mb-6">
+                        <div class="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
+                            <i data-lucide="zap" class="w-6 h-6 text-slate-500"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-slate-900">Básico</h3>
+                        <p class="text-sm text-slate-500 mt-1">Ideal para transportistas puntuales</p>
+                    </div>
+                    <div class="mb-6">
+                        <div class="flex items-baseline gap-1">
+                            <span class="text-4xl font-bold text-slate-900 plan-price" data-monthly="5" data-usage="5">5</span>
+                            <span class="text-slate-500 text-sm plan-currency">€</span>
+                        </div>
+                        <span class="text-sm text-slate-400 plan-period">/turno</span>
+                    </div>
+                    <ul class="space-y-3 mb-8 flex-1">
+                        <li class="flex items-center gap-3 text-sm text-slate-600"><i data-lucide="check" class="w-4 h-4 text-brand-500 flex-shrink-0"></i>Reserva de turnos</li>
+                        <li class="flex items-center gap-3 text-sm text-slate-600"><i data-lucide="check" class="w-4 h-4 text-brand-500 flex-shrink-0"></i>Trazabilidad básica</li>
+                        <li class="flex items-center gap-3 text-sm text-slate-600"><i data-lucide="check" class="w-4 h-4 text-brand-500 flex-shrink-0"></i>Notificaciones por email</li>
+                        <li class="flex items-center gap-3 text-sm text-slate-600"><i data-lucide="check" class="w-4 h-4 text-brand-500 flex-shrink-0"></i>Facturación automática</li>
+                        <li class="flex items-center gap-3 text-sm text-slate-300"><i data-lucide="minus" class="w-4 h-4 flex-shrink-0"></i>Optimización IA</li>
+                        <li class="flex items-center gap-3 text-sm text-slate-300"><i data-lucide="minus" class="w-4 h-4 flex-shrink-0"></i>API de integración</li>
+                    </ul>
+                    <button onclick="selectPlan('Básico')" class="w-full py-3 rounded-xl border-2 border-slate-200 text-sm font-semibold text-slate-700 hover:border-brand-500 hover:text-brand-600 transition-all duration-150 hover:scale-[1.02] active:scale-[0.98]">
+                        Comenzar ahora
+                    </button>
+                </div>
+
+                <div class="reveal plan-card plan-featured bg-white rounded-2xl p-8 flex flex-col" style="transition-delay:0.2s" id="planPro">
+                    <div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-brand-500 text-white text-xs font-bold uppercase tracking-wider px-4 py-1.5 rounded-full shadow-lg shadow-brand-500/30">
+                        Más popular
+                    </div>
+                    <div class="mb-6">
+                        <div class="w-12 h-12 rounded-2xl bg-brand-50 flex items-center justify-center mb-4">
+                            <i data-lucide="truck" class="w-6 h-6 text-brand-500"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-slate-900">Flotas PRO</h3>
+                        <p class="text-sm text-slate-500 mt-1">Para flotas con operaciones regulares</p>
+                    </div>
+                    <div class="mb-6">
+                        <div class="flex items-baseline gap-1">
+                            <span class="text-4xl font-bold text-slate-900 plan-price" data-monthly="199" data-usage="4">199</span>
+                            <span class="text-slate-500 text-sm plan-currency">€</span>
+                        </div>
+                        <span class="text-sm text-slate-400 plan-period">/mes</span>
+                    </div>
+                    <ul class="space-y-3 mb-8 flex-1">
+                        <li class="flex items-center gap-3 text-sm text-slate-700"><i data-lucide="check" class="w-4 h-4 text-brand-500 flex-shrink-0"></i>Todo lo del plan Básico</li>
+                        <li class="flex items-center gap-3 text-sm text-slate-700"><i data-lucide="check" class="w-4 h-4 text-brand-500 flex-shrink-0"></i>Hasta 50 vehículos</li>
+                        <li class="flex items-center gap-3 text-sm text-slate-700"><i data-lucide="check" class="w-4 h-4 text-brand-500 flex-shrink-0"></i>Optimización de rutas IA</li>
+                        <li class="flex items-center gap-3 text-sm text-slate-700"><i data-lucide="check" class="w-4 h-4 text-brand-500 flex-shrink-0"></i>Reportes avanzados</li>
+                        <li class="flex items-center gap-3 text-sm text-slate-700"><i data-lucide="check" class="w-4 h-4 text-brand-500 flex-shrink-0"></i>Gestión de conductores</li>
+                        <li class="flex items-center gap-3 text-sm text-slate-300"><i data-lucide="minus" class="w-4 h-4 flex-shrink-0"></i>API de integración</li>
+                    </ul>
+                    <button onclick="selectPlan('Flotas PRO')" class="w-full py-3 rounded-xl bg-brand-500 hover:bg-brand-600 text-sm font-semibold text-white transition-all duration-150 hover:scale-[1.02] active:scale-[0.98] shadow-xl shadow-brand-500/30">
+                        Elegir Flotas PRO
+                    </button>
+                </div>
+
+                <div class="reveal plan-card bg-white border border-slate-200 rounded-2xl p-8 flex flex-col shadow-sm" style="transition-delay:0.3s" id="planEnterprise">
+                    <div class="mb-6">
+                        <div class="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
+                            <i data-lucide="building" class="w-6 h-6 text-slate-500"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-slate-900">Enterprise</h3>
+                        <p class="text-sm text-slate-500 mt-1">Para grandes terminales y operadores</p>
+                    </div>
+                    <div class="mb-6">
+                        <div class="flex items-baseline gap-1">
+                            <span class="text-4xl font-bold text-slate-900">A medida</span>
+                        </div>
+                        <span class="text-sm text-slate-400">Plan personalizado</span>
+                    </div>
+                    <ul class="space-y-3 mb-8 flex-1">
+                        <li class="flex items-center gap-3 text-sm text-slate-600"><i data-lucide="check" class="w-4 h-4 text-brand-500 flex-shrink-0"></i>Todo lo de Flotas PRO</li>
+                        <li class="flex items-center gap-3 text-sm text-slate-600"><i data-lucide="check" class="w-4 h-4 text-brand-500 flex-shrink-0"></i>Vehículos ilimitados</li>
+                        <li class="flex items-center gap-3 text-sm text-slate-600"><i data-lucide="check" class="w-4 h-4 text-brand-500 flex-shrink-0"></i>API de integración completa</li>
+                        <li class="flex items-center gap-3 text-sm text-slate-600"><i data-lucide="check" class="w-4 h-4 text-brand-500 flex-shrink-0"></i>Soporte dedicado 24/7</li>
+                        <li class="flex items-center gap-3 text-sm text-slate-600"><i data-lucide="check" class="w-4 h-4 text-brand-500 flex-shrink-0"></i>SLA garantizado</li>
+                        <li class="flex items-center gap-3 text-sm text-slate-600"><i data-lucide="check" class="w-4 h-4 text-brand-500 flex-shrink-0"></i>Despliegue personalizado</li>
+                    </ul>
+                    <button onclick="selectPlan('Enterprise')" class="w-full py-3 rounded-xl border-2 border-slate-200 text-sm font-semibold text-slate-700 hover:border-brand-500 hover:text-brand-600 transition-all duration-150 hover:scale-[1.02] active:scale-[0.98]">
+                        Contactar ventas
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SEGURIDAD -->
+    <section id="seguridad" class="relative py-24 md:py-32 bg-slate-50">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="grid lg:grid-cols-2 gap-16 items-center">
+                <div class="reveal-left">
+                    <span class="inline-block text-xs font-semibold uppercase tracking-widest text-brand-500 mb-4">Seguridad</span>
+                    <h2 class="text-3xl md:text-5xl font-bold tracking-tight mb-6 text-slate-900">Confianza<br><span class="gradient-text">por diseño</span></h2>
+                    <p class="text-slate-500 font-light leading-relaxed text-lg mb-8">
+                        PortWeb incorpora las mejores prácticas de ciberseguridad para garantizar la integridad y confidencialidad de los datos operativos.
+                    </p>
+
+                    <div class="grid grid-cols-2 gap-6">
+                        <div class="group">
+                            <div class="w-12 h-12 rounded-xl bg-brand-50 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                                <i data-lucide="shield-check" class="w-6 h-6 text-brand-500"></i>
+                            </div>
+                            <h4 class="font-semibold mb-1 text-sm text-slate-900">Cifrado SSL/HTTPS</h4>
+                            <p class="text-xs text-slate-500 font-light">Encriptación de grado militar para datos en tránsito.</p>
+                        </div>
+                        <div class="group">
+                            <div class="w-12 h-12 rounded-xl bg-brand-50 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                                <i data-lucide="lock" class="w-6 h-6 text-brand-500"></i>
+                            </div>
+                            <h4 class="font-semibold mb-1 text-sm text-slate-900">Control RBAC</h4>
+                            <p class="text-xs text-slate-500 font-light">Acceso por roles que limita información sensible.</p>
+                        </div>
+                        <div class="group">
+                            <div class="w-12 h-12 rounded-xl bg-brand-50 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                                <i data-lucide="fingerprint" class="w-6 h-6 text-brand-500"></i>
+                            </div>
+                            <h4 class="font-semibold mb-1 text-sm text-slate-900">Autenticación robusta</h4>
+                            <p class="text-xs text-slate-500 font-light">Verificación con múltiples factores de seguridad.</p>
+                        </div>
+                        <div class="group">
+                            <div class="w-12 h-12 rounded-xl bg-brand-50 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                                <i data-lucide="credit-card" class="w-6 h-6 text-brand-500"></i>
+                            </div>
+                            <h4 class="font-semibold mb-1 text-sm text-slate-900">Protección de pagos</h4>
+                            <p class="text-xs text-slate-500 font-light">Pasarelas seguras con cumplimiento PCI DSS.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="reveal-right">
+                    <div class="relative">
+                        <div class="absolute inset-0 bg-brand-500/5 rounded-2xl blur-3xl"></div>
+                        <div class="relative bg-white border border-slate-200 rounded-2xl p-8 md:p-12 shadow-lg">
+                            <div class="flex items-center justify-center mb-8">
+                                <div class="relative w-48 h-48">
+                                    <div class="absolute inset-0 border-2 border-brand-500/20 rounded-full animate-spin-slow"></div>
+                                    <div class="absolute inset-4 border border-orange-200/60 rounded-full animate-spin-slow-reverse"></div>
+                                    <div class="absolute inset-8 border border-brand-100/80 rounded-full animate-spin-slow"></div>
+                                    <div class="absolute inset-0 flex items-center justify-center">
+                                        <div class="w-16 h-16 bg-brand-50 rounded-2xl flex items-center justify-center border border-brand-100">
+                                            <i data-lucide="shield" class="w-8 h-8 text-brand-500"></i>
+                                        </div>
+                                    </div>
+                                    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-3 h-3 bg-brand-400 rounded-full animate-pulse"></div>
+                                    <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-3 h-3 bg-orange-400 rounded-full animate-pulse" style="animation-delay:1s"></div>
+                                    <div class="absolute left-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-amber-400 rounded-full animate-pulse" style="animation-delay:0.5s"></div>
                                 </div>
-                                <div class="bg-portblue text-white w-8 h-8 rounded-full flex items-center justify-center">
-                                    <i class="fas fa-arrow-right"></i>
+                            </div>
+
+                            <div class="space-y-4">
+                                <div class="flex items-center gap-4 p-4 bg-brand-50/50 rounded-xl border border-brand-100/50">
+                                    <div class="w-2 h-2 rounded-full bg-green-500 flex-shrink-0"></div>
+                                    <div class="flex-1">
+                                        <p class="text-sm font-medium text-slate-900">Certificado SSL activo</p>
+                                        <p class="text-xs text-slate-500">TLS 1.3 — 256-bit AES</p>
+                                    </div>
+                                    <i data-lucide="check-circle-2" class="w-5 h-5 text-green-500"></i>
+                                </div>
+                                <div class="flex items-center gap-4 p-4 bg-brand-50/50 rounded-xl border border-brand-100/50">
+                                    <div class="w-2 h-2 rounded-full bg-green-500 flex-shrink-0"></div>
+                                    <div class="flex-1">
+                                        <p class="text-sm font-medium text-slate-900">Firewall de aplicación (WAF)</p>
+                                        <p class="text-xs text-slate-500">Protección contra inyecciones y XSS</p>
+                                    </div>
+                                    <i data-lucide="check-circle-2" class="w-5 h-5 text-green-500"></i>
+                                </div>
+                                <div class="flex items-center gap-4 p-4 bg-brand-50/50 rounded-xl border border-brand-100/50">
+                                    <div class="w-2 h-2 rounded-full bg-green-500 flex-shrink-0"></div>
+                                    <div class="flex-1">
+                                        <p class="text-sm font-medium text-slate-900">Auditoría de acceso en tiempo real</p>
+                                        <p class="text-xs text-slate-500">Logs inmutables de cada acción</p>
+                                    </div>
+                                    <i data-lucide="check-circle-2" class="w-5 h-5 text-green-500"></i>
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
-                        <button class="w-full bg-portblue text-white py-4 rounded-xl font-bold hover:bg-blue-900 transition flex justify-center items-center shadow-lg">
-                            <i class="fas fa-location-arrow mr-2 text-portaccent"></i> Iniciar Ruta Alterna
+    <!-- VISIÓN -->
+    <section id="vision" class="relative py-24 md:py-32 overflow-hidden bg-white">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16 reveal">
+                <span class="inline-block text-xs font-semibold uppercase tracking-widest text-brand-500 mb-4">Visión</span>
+                <h2 class="text-3xl md:text-5xl font-bold tracking-tight mb-6 text-slate-900">Escalabilidad <span class="gradient-text">global</span></h2>
+                <p class="text-slate-500 font-light max-w-2xl mx-auto text-lg">PortWeb nace con vocación de liderar la transformación digital portuaria a nivel mundial.</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="reveal card-hover bg-slate-50 border border-slate-100 rounded-2xl p-8 text-center group" style="transition-delay:0.1s">
+                    <div class="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-brand-100 to-orange-100 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        <i data-lucide="map-pin" class="w-10 h-10 text-brand-500"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3 text-slate-900">Replicable en cualquier terminal</h3>
+                    <p class="text-slate-500 font-light leading-relaxed text-sm">Arquitectura adaptable a cualquier puerto marítimo del mundo.</p>
+                </div>
+                <div class="reveal card-hover bg-slate-50 border border-slate-100 rounded-2xl p-8 text-center group" style="transition-delay:0.2s">
+                    <div class="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-orange-100 to-amber-100 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        <i data-lucide="link" class="w-10 h-10 text-orange-500"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3 text-slate-900">Integración con redes profesionales</h3>
+                    <p class="text-slate-500 font-light leading-relaxed text-sm">Expansión a través de LinkedIn y ecosistemas logísticos.</p>
+                </div>
+                <div class="reveal card-hover bg-slate-50 border border-slate-100 rounded-2xl p-8 text-center group" style="transition-delay:0.3s">
+                    <div class="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-amber-100 to-brand-100 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        <i data-lucide="rocket" class="w-10 h-10 text-amber-600"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold mb-3 text-slate-900">Transformación digital global</h3>
+                    <p class="text-slate-500 font-light leading-relaxed text-sm">Liderar la digitalización de la cadena de suministro portuaria.</p>
+                </div>
+            </div>
+
+            <div class="mt-16 reveal">
+                <div class="relative bg-brand-50/50 border border-brand-100/50 rounded-2xl p-8 overflow-hidden">
+                    <div class="absolute inset-0 opacity-5">
+                        <img src="https://picsum.photos/seed/world-map-light/1200/400.jpg" alt="" class="w-full h-full object-cover">
+                    </div>
+                    <div class="relative text-center">
+                        <p class="text-6xl md:text-8xl font-bold text-brand-200 tracking-tighter">PORTECH</p>
+                        <p class="text-slate-400 text-sm mt-2">Conectando puertos en 5 continentes</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BLOG -->
+    <section id="blog" class="relative py-24 md:py-32 bg-slate-50">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16 reveal">
+                <span class="inline-block text-xs font-semibold uppercase tracking-widest text-brand-500 mb-4">Blog</span>
+                <h2 class="text-3xl md:text-5xl font-bold tracking-tight mb-6 text-slate-900">Últimas <span class="gradient-text">novedades</span></h2>
+                <p class="text-slate-500 font-light max-w-2xl mx-auto text-lg">Artículos sobre logística portuaria, optimización del transporte y tendencias tecnológicas.</p>
+            </div>
+
+            <div class="flex flex-wrap justify-center gap-2 mb-12 reveal">
+                <button class="tab-btn active text-sm px-5 py-2 rounded-full border border-slate-200" onclick="filterBlog('all', this)">Todos</button>
+                <button class="tab-btn text-sm px-5 py-2 rounded-full border border-slate-200 text-slate-500" onclick="filterBlog('logistica', this)">Logística</button>
+                <button class="tab-btn text-sm px-5 py-2 rounded-full border border-slate-200 text-slate-500" onclick="filterBlog('tecnologia', this)">Tecnología</button>
+                <button class="tab-btn text-sm px-5 py-2 rounded-full border border-slate-200 text-slate-500" onclick="filterBlog('puertos', this)">Puertos</button>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8" id="blogGrid">
+                <article class="reveal blog-card card-hover bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm" data-category="logistica" style="transition-delay:0.1s">
+                    <div class="relative h-52 overflow-hidden">
+                        <img src="https://picsum.photos/seed/port-congestion/600/400.jpg" alt="Congestión portuaria" class="w-full h-full object-cover">
+                        <div class="absolute top-4 left-4">
+                            <span class="bg-brand-500 text-white text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full">Logística</span>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div class="flex items-center gap-3 text-xs text-slate-400 mb-3">
+                            <span>12 Mar 2026</span><span>•</span><span>5 min lectura</span>
+                        </div>
+                        <h3 class="font-semibold mb-2 leading-snug text-slate-900">Cómo reducir la congestión portuaria: estrategias comprobadas</h3>
+                        <p class="text-sm text-slate-500 font-light leading-relaxed mb-4">Análisis de las técnicas más efectivas para minimizar los tiempos de espera.</p>
+                        <a href="#" onclick="event.preventDefault();showToast('Artículo completo disponible próximamente')" class="inline-flex items-center gap-2 text-sm text-brand-600 hover:text-brand-700 transition-colors font-medium group">
+                            Leer más <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+                        </a>
+                    </div>
+                </article>
+
+                <article class="reveal blog-card card-hover bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm" data-category="tecnologia" style="transition-delay:0.2s">
+                    <div class="relative h-52 overflow-hidden">
+                        <img src="https://picsum.photos/seed/ai-logistics/600/400.jpg" alt="IA en logística" class="w-full h-full object-cover">
+                        <div class="absolute top-4 left-4">
+                            <span class="bg-orange-500 text-white text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full">Tecnología</span>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div class="flex items-center gap-3 text-xs text-slate-400 mb-3">
+                            <span>28 Feb 2026</span><span>•</span><span>7 min lectura</span>
+                        </div>
+                        <h3 class="font-semibold mb-2 leading-snug text-slate-900">IA aplicada a la optimización de rutas portuarias</h3>
+                        <p class="text-sm text-slate-500 font-light leading-relaxed mb-4">Cómo los algoritmos predictivos revolucionan la planificación del transporte.</p>
+                        <a href="#" onclick="event.preventDefault();showToast('Artículo completo disponible próximamente')" class="inline-flex items-center gap-2 text-sm text-brand-600 hover:text-brand-700 transition-colors font-medium group">
+                            Leer más <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+                        </a>
+                    </div>
+                </article>
+
+                <article class="reveal blog-card card-hover bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm" data-category="puertos" style="transition-delay:0.3s">
+                    <div class="relative h-52 overflow-hidden">
+                        <img src="https://picsum.photos/seed/smart-port/600/400.jpg" alt="Puerto inteligente" class="w-full h-full object-cover">
+                        <div class="absolute top-4 left-4">
+                            <span class="bg-amber-600 text-white text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full">Puertos</span>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div class="flex items-center gap-3 text-xs text-slate-400 mb-3">
+                            <span>15 Ene 2026</span><span>•</span><span>6 min lectura</span>
+                        </div>
+                        <h3 class="font-semibold mb-2 leading-snug text-slate-900">El puerto inteligente: tendencias en digitalización 2026</h3>
+                        <p class="text-sm text-slate-500 font-light leading-relaxed mb-4">Las tecnologías que definirán la próxima generación de terminales portuarias.</p>
+                        <a href="#" onclick="event.preventDefault();showToast('Artículo completo disponible próximamente')" class="inline-flex items-center gap-2 text-sm text-brand-600 hover:text-brand-700 transition-colors font-medium group">
+                            Leer más <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+                        </a>
+                    </div>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA FINAL -->
+    <section class="relative py-24 md:py-32 overflow-hidden bg-gradient-to-br from-brand-500 to-brand-600">
+        <div class="absolute inset-0 opacity-10">
+            <img src="https://picsum.photos/seed/port-aerial/1920/600.jpg" alt="" class="w-full h-full object-cover">
+        </div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-white/5 rounded-full blur-[128px]"></div>
+
+        <div class="relative max-w-4xl mx-auto px-6 text-center reveal">
+            <div class="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-2 mb-8">
+                <i data-lucide="anchor" class="w-4 h-4 text-white"></i>
+                <span class="text-xs font-semibold uppercase tracking-wider text-white/90">PortTech</span>
+            </div>
+            <h2 class="text-3xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6 text-white">
+                Transforma tu operación<br>portuaria hoy
+            </h2>
+            <p class="text-white/80 font-light text-lg max-w-2xl mx-auto mb-10">
+                Únete a las empresas que ya están optimizando sus procesos logísticos con PortWeb. Comienza gratis, sin compromiso.
+            </p>
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <button onclick="openModal('registerModal')" class="group bg-white text-brand-600 font-semibold px-8 py-4 rounded-xl transition-all duration-150 hover:scale-105 active:scale-95 flex items-center gap-2 shadow-xl">
+                    Crear cuenta gratuita
+                    <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+                </button>
+                <a href="#planes" class="group border-2 border-white/30 hover:border-white/60 text-white font-semibold px-8 py-4 rounded-xl transition-all duration-150 hover:bg-white/10 flex items-center gap-2">
+                    Ver planes
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- CONTACTO -->
+    <section id="contacto" class="relative py-24 md:py-32 bg-slate-50">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="grid lg:grid-cols-2 gap-16">
+                <div class="reveal-left">
+                    <span class="inline-block text-xs font-semibold uppercase tracking-widest text-brand-500 mb-4">Contacto</span>
+                    <h2 class="text-3xl md:text-4xl font-bold tracking-tight mb-6 text-slate-900">Hablemos de tu <span class="gradient-text">proyecto</span></h2>
+                    <p class="text-slate-500 font-light leading-relaxed mb-8">¿Tienes preguntas sobre PortWeb? ¿Necesitas una solución Enterprise personalizada? Estamos aquí para ayudarte.</p>
+
+                    <div class="space-y-6">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-xl bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                <i data-lucide="mail" class="w-5 h-5 text-brand-500"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-slate-400">Email</p>
+                                <p class="font-medium text-slate-900">contacto@porttech.io</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-xl bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                <i data-lucide="linkedin" class="w-5 h-5 text-brand-500"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-slate-400">LinkedIn</p>
+                                <p class="font-medium text-slate-900">linkedin.com/company/porttech</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-xl bg-brand-50 flex items-center justify-center flex-shrink-0">
+                                <i data-lucide="map-pin" class="w-5 h-5 text-brand-500"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-slate-400">Ubicación</p>
+                                <p class="font-medium text-slate-900">España — Operación global</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="reveal-right">
+                    <form id="contactForm" onsubmit="handleContact(event)" class="bg-white border border-slate-200 rounded-2xl p-8 space-y-5 shadow-sm">
+                        <div class="grid sm:grid-cols-2 gap-5">
+                            <div>
+                                <label class="block text-sm text-slate-500 mb-2">Nombre</label>
+                                <input type="text" required placeholder="Tu nombre"
+                                    class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-sm text-slate-500 mb-2">Empresa</label>
+                                <input type="text" required placeholder="Tu empresa"
+                                    class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition-all">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-slate-500 mb-2">Email</label>
+                            <input type="email" required placeholder="tu@email.com"
+                                class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-slate-500 mb-2">Perfil</label>
+                            <select required class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-slate-900 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition-all">
+                                <option value="">Selecciona tu perfil</option>
+                                <option>Transportista</option>
+                                <option>Operador Logístico</option>
+                                <option>Terminal Portuaria</option>
+                                <option>Agencia de Carga</option>
+                                <option>Importador / Exportador</option>
+                                <option>Otro</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-slate-500 mb-2">Mensaje</label>
+                            <textarea required rows="4" placeholder="Cuéntanos en qué podemos ayudarte..."
+                                class="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition-all resize-none"></textarea>
+                        </div>
+                        <button type="submit" class="w-full bg-brand-500 hover:bg-brand-600 text-white font-semibold py-3.5 rounded-lg transition-all duration-150 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 shadow-lg shadow-brand-500/25">
+                            <i data-lucide="send" class="w-4 h-4"></i>
+                            Enviar mensaje
                         </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="relative bg-slate-900 border-t border-slate-800">
+        <div class="max-w-7xl mx-auto px-6 py-16">
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
+                <div class="lg:col-span-1">
+                    <a href="#inicio" class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 bg-brand-500 rounded-xl flex items-center justify-center">
+                            <i data-lucide="anchor" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <span class="text-lg font-bold tracking-tight text-white">Port<span class="text-brand-400">Web</span></span>
+                    </a>
+                    <p class="text-sm text-slate-400 font-light leading-relaxed mb-6">Gestión inteligente para el ecosistema portuario. Transformando la logística con tecnología digital.</p>
+                    <div class="flex items-center gap-3">
+                        <a href="#" onclick="event.preventDefault();showToast('Síguenos en LinkedIn')" class="w-9 h-9 rounded-lg bg-slate-800 hover:bg-brand-500/20 flex items-center justify-center transition-colors group">
+                            <i data-lucide="linkedin" class="w-4 h-4 text-slate-500 group-hover:text-brand-400"></i>
+                        </a>
+                        <a href="#" onclick="event.preventDefault();showToast('Síguenos en Twitter')" class="w-9 h-9 rounded-lg bg-slate-800 hover:bg-brand-500/20 flex items-center justify-center transition-colors group">
+                            <i data-lucide="twitter" class="w-4 h-4 text-slate-500 group-hover:text-brand-400"></i>
+                        </a>
+                        <a href="#" onclick="event.preventDefault();showToast('Contáctanos por email')" class="w-9 h-9 rounded-lg bg-slate-800 hover:bg-brand-500/20 flex items-center justify-center transition-colors group">
+                            <i data-lucide="mail" class="w-4 h-4 text-slate-500 group-hover:text-brand-400"></i>
+                        </a>
                     </div>
                 </div>
-            </div>
-        </div>
-    </section>
 
-    <section id="funcionalidades" class="py-24 bg-portlight">
-        <div class="container mx-auto px-6">
-            <div class="text-center max-w-3xl mx-auto mb-16">
-                <h2 class="text-3xl font-bold text-portblue mb-4">Todo lo que necesitas para operar</h2>
-                <p class="text-portgray">Un conjunto completo de herramientas administrativas y operativas pensadas exclusivamente para logística portuaria.</p>
-            </div>
-            
-            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div class="bg-white p-6 rounded-xl border border-gray-200">
-                    <i class="fas fa-file-invoice-dollar text-2xl text-portaccent mb-4"></i>
-                    <h4 class="font-bold text-lg mb-2 text-portblue">Facturación y Pagos</h4>
-                    <p class="text-sm text-gray-600">Genera facturas automáticas por viajes, cobros de estadía y recibe pagos con tarjetas o transferencias B2B.</p>
-                </div>
-                <div class="bg-white p-6 rounded-xl border border-gray-200">
-                    <i class="fas fa-users text-2xl text-portaccent mb-4"></i>
-                    <h4 class="font-bold text-lg mb-2 text-portblue">CRM y Base de Datos</h4>
-                    <p class="text-sm text-gray-600">Centraliza la información de todos tus conductores, licencias, seguros y empresas contratistas.</p>
-                </div>
-                <div class="bg-white p-6 rounded-xl border border-gray-200">
-                    <i class="fas fa-chart-pie text-2xl text-portaccent mb-4"></i>
-                    <h4 class="font-bold text-lg mb-2 text-portblue">Reportes Avanzados</h4>
-                    <p class="text-sm text-gray-600">Exporta informes en Excel o PDF sobre tiempos de ciclo, cumplimiento de citas y rentabilidad por viaje.</p>
-                </div>
-                <div class="bg-white p-6 rounded-xl border border-gray-200">
-                    <i class="fas fa-tools text-2xl text-portaccent mb-4"></i>
-                    <h4 class="font-bold text-lg mb-2 text-portblue">Mantenimiento de Flota</h4>
-                    <p class="text-sm text-gray-600">Registra el estado mecánico de los camiones y agenda mantenimientos preventivos.</p>
-                </div>
-                <div class="bg-white p-6 rounded-xl border border-gray-200">
-                    <i class="fas fa-shield-alt text-2xl text-portaccent mb-4"></i>
-                    <h4 class="font-bold text-lg mb-2 text-portblue">Control de Accesos (RBAC)</h4>
-                    <p class="text-sm text-gray-600">Otorga permisos específicos según el rol: despachador, conductor, gerente o guarda de seguridad.</p>
-                </div>
-                <div class="bg-white p-6 rounded-xl border border-gray-200 bg-portblue text-white">
-                    <i class="fas fa-plus-circle text-2xl text-portaccent mb-4"></i>
-                    <h4 class="font-bold text-lg mb-2">Y mucho más...</h4>
-                    <p class="text-sm text-gray-300 mb-4">Descubre todas las características en una demostración personalizada.</p>
-                    <a href="#" class="text-portaccent text-sm font-bold hover:underline">Reservar Demo &rarr;</a>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section id="integraciones" class="py-20 bg-white border-t border-gray-100">
-        <div class="container mx-auto px-6 text-center">
-            <h2 class="text-3xl font-bold text-portblue mb-6">Se integra con tu ecosistema</h2>
-            <p class="text-gray-600 mb-12 max-w-2xl mx-auto">PortTech no es una isla. Nos conectamos a través de APIs con los sistemas que ya utilizas, desde PCS portuarios hasta ERPs financieros.</p>
-            
-            <div class="flex flex-wrap justify-center items-center gap-8">
-                <div class="px-6 py-4 border border-gray-200 rounded-lg shadow-sm font-bold text-gray-500 bg-gray-50">Sistemas PCS Portuarios</div>
-                <div class="px-6 py-4 border border-gray-200 rounded-lg shadow-sm font-bold text-gray-500 bg-gray-50"><i class="fab fa-sap text-blue-500 mr-2"></i> SAP ERP</div>
-                <div class="px-6 py-4 border border-gray-200 rounded-lg shadow-sm font-bold text-gray-500 bg-gray-50"><i class="fas fa-satellite text-gray-800 mr-2"></i> Proveedores GPS</div>
-                <div class="px-6 py-4 border border-gray-200 rounded-lg shadow-sm font-bold text-gray-500 bg-gray-50"><i class="fab fa-stripe text-indigo-500 mr-2"></i> Pasarelas de Pago</div>
-            </div>
-        </div>
-    </section>
-
-    <section id="planes" class="py-24 bg-portlight">
-        <div class="container mx-auto px-6">
-            <div class="text-center mb-16">
-                <h2 class="text-3xl font-bold text-portblue">Planes Flexibles B2B</h2>
-                <p class="text-gray-600 mt-4">Escala tu plan a medida que crece tu flota y tu volumen de operaciones.</p>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto items-center">
-                <div class="bg-white border border-gray-200 rounded-2xl p-8 hover:shadow-xl transition">
-                    <h3 class="text-2xl font-bold text-portblue mb-2">Básico / Pago por Uso</h3>
-                    <p class="text-gray-500 text-sm mb-6">Para transportistas independientes.</p>
-                    <div class="text-4xl font-extrabold mb-6 text-gray-800">$5<span class="text-lg text-gray-500 font-normal"> /turno</span></div>
-                    <ul class="space-y-4 mb-8 text-sm text-gray-600">
-                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i> App Móvil para conductor</li>
-                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i> Agendamiento de citas</li>
-                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i> Facturación digital básica</li>
-                        <li class="flex items-center text-gray-400"><i class="fas fa-times mr-3"></i> Rutas IA Predictivas</li>
-                    </ul>
-                    <button class="w-full border-2 border-portblue text-portblue py-3 rounded-lg font-bold hover:bg-portblue hover:text-white transition">Crear Cuenta Gratis</button>
-                </div>
-
-                <div class="bg-portblue text-white rounded-2xl p-8 transform md:-translate-y-4 shadow-2xl relative border border-portblue">
-                    <div class="absolute top-0 right-1/2 transform translate-x-1/2 -translate-y-1/2 bg-portaccent text-portblue text-xs font-black px-4 py-1.5 rounded-full uppercase tracking-wider">Más Elegido</div>
-                    <h3 class="text-2xl font-bold mb-2 mt-2">Flotas PRO</h3>
-                    <p class="text-gray-300 text-sm mb-6">Para agencias logísticas y pymes.</p>
-                    <div class="text-4xl font-extrabold mb-6">$199<span class="text-lg text-gray-400 font-normal"> /mes</span></div>
-                    <ul class="space-y-4 mb-8 text-sm text-gray-200">
-                        <li class="flex items-center"><i class="fas fa-check text-portaccent mr-3"></i> Turnos ilimitados</li>
-                        <li class="flex items-center"><i class="fas fa-check text-portaccent mr-3"></i> <strong>Rutas IA (Ahorro 50% tiempo)</strong></li>
-                        <li class="flex items-center"><i class="fas fa-check text-portaccent mr-3"></i> Trazabilidad GPS en mapa</li>
-                        <li class="flex items-center"><i class="fas fa-check text-portaccent mr-3"></i> Soporte Prioritario 24/7</li>
-                    </ul>
-                    <button class="w-full bg-portaccent text-portblue py-3 rounded-lg font-bold hover:bg-yellow-400 transition shadow-lg">Comenzar Prueba de 14 Días</button>
-                </div>
-
-                <div class="bg-white border border-gray-200 rounded-2xl p-8 hover:shadow-xl transition">
-                    <h3 class="text-2xl font-bold text-portblue mb-2">Enterprise</h3>
-                    <p class="text-gray-500 text-sm mb-6">Terminales y autoridades portuarias.</p>
-                    <div class="text-4xl font-extrabold mb-6 text-gray-800">A Medida</div>
-                    <ul class="space-y-4 mb-8 text-sm text-gray-600">
-                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i> Todo lo del plan PRO</li>
-                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i> Dashboard de control de puertas</li>
-                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i> Integración API / PCS / ERP</li>
-                        <li class="flex items-center"><i class="fas fa-check text-green-500 mr-3"></i> Gestor de cuentas dedicado</li>
-                    </ul>
-                    <button class="w-full border-2 border-gray-300 text-gray-600 py-3 rounded-lg font-bold hover:border-portblue hover:text-portblue transition">Contactar Ventas</button>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <footer class="bg-black text-gray-400 py-12">
-        <div class="container mx-auto px-6">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8 border-b border-gray-800 pb-8">
-                <div class="col-span-1 md:col-span-1">
-                    <div class="text-2xl font-extrabold tracking-tighter text-white mb-4">
-                        <i class="fas fa-ship text-portaccent mr-2"></i> PortTech<span class="text-portaccent">.</span>
-                    </div>
-                    <p class="text-sm text-gray-500 mb-4">Transformando la logística terrestre y portuaria mediante Inteligencia Artificial y automatización.</p>
-                    <div class="flex space-x-4">
-                        <a href="#" class="text-gray-500 hover:text-white transition"><i class="fab fa-linkedin text-xl"></i></a>
-                        <a href="#" class="text-gray-500 hover:text-white transition"><i class="fab fa-twitter text-xl"></i></a>
-                    </div>
-                </div>
-                
                 <div>
-                    <h4 class="text-white font-bold mb-4">Producto</h4>
-                    <ul class="space-y-2 text-sm">
-                        <li><a href="#" class="hover:text-portaccent transition">Funcionalidades</a></li>
-                        <li><a href="#" class="hover:text-portaccent transition">Predicción IA</a></li>
-                        <li><a href="#" class="hover:text-portaccent transition">Precios</a></li>
-                        <li><a href="#" class="hover:text-portaccent transition">App para Conductores</a></li>
+                    <h4 class="font-semibold mb-4 text-sm text-white">Plataforma</h4>
+                    <ul class="space-y-3">
+                        <li><a href="#funcionalidades" class="text-sm text-slate-500 hover:text-brand-400 transition-colors">Funcionalidades</a></li>
+                        <li><a href="#planes" class="text-sm text-slate-500 hover:text-brand-400 transition-colors">Planes y precios</a></li>
+                        <li><a href="#seguridad" class="text-sm text-slate-500 hover:text-brand-400 transition-colors">Seguridad</a></li>
+                        <li><a href="#" onclick="event.preventDefault();showToast('Documentación disponible próximamente')" class="text-sm text-slate-500 hover:text-brand-400 transition-colors">Documentación API</a></li>
+                        <li><a href="#" onclick="event.preventDefault();showToast('Changelog disponible próximamente')" class="text-sm text-slate-500 hover:text-brand-400 transition-colors">Novedades</a></li>
                     </ul>
                 </div>
-                
+
                 <div>
-                    <h4 class="text-white font-bold mb-4">Recursos</h4>
-                    <ul class="space-y-2 text-sm">
-                        <li><a href="#" class="hover:text-portaccent transition">Blog Logístico</a></li>
-                        <li><a href="#" class="hover:text-portaccent transition">Casos de Éxito</a></li>
-                        <li><a href="#" class="hover:text-portaccent transition">API Docs</a></li>
-                        <li><a href="#" class="hover:text-portaccent transition">Centro de Ayuda</a></li>
+                    <h4 class="font-semibold mb-4 text-sm text-white">Empresa</h4>
+                    <ul class="space-y-3">
+                        <li><a href="#solucion" class="text-sm text-slate-500 hover:text-brand-400 transition-colors">Sobre PortTech</a></li>
+                        <li><a href="#blog" class="text-sm text-slate-500 hover:text-brand-400 transition-colors">Blog</a></li>
+                        <li><a href="#contacto" class="text-sm text-slate-500 hover:text-brand-400 transition-colors">Contacto</a></li>
+                        <li><a href="#" onclick="event.preventDefault();showToast('Estamos contratando')" class="text-sm text-slate-500 hover:text-brand-400 transition-colors">Empleo</a></li>
+                        <li><a href="#" onclick="event.preventDefault()" class="text-sm text-slate-500 hover:text-brand-400 transition-colors">Prensa</a></li>
                     </ul>
                 </div>
-                
+
                 <div>
-                    <h4 class="text-white font-bold mb-4">Empresa</h4>
-                    <ul class="space-y-2 text-sm">
-                        <li><a href="#" class="hover:text-portaccent transition">Sobre Nosotros</a></li>
-                        <li><a href="#" class="hover:text-portaccent transition">Contacto</a></li>
-                        <li><a href="#" class="hover:text-portaccent transition">Privacidad y Seguridad</a></li>
-                        <li><a href="#" class="hover:text-portaccent transition">Términos de Servicio</a></li>
+                    <h4 class="font-semibold mb-4 text-sm text-white">Legal</h4>
+                    <ul class="space-y-3">
+                        <li><a href="#" onclick="event.preventDefault()" class="text-sm text-slate-500 hover:text-brand-400 transition-colors">Términos de servicio</a></li>
+                        <li><a href="#" onclick="event.preventDefault()" class="text-sm text-slate-500 hover:text-brand-400 transition-colors">Política de privacidad</a></li>
+                        <li><a href="#" onclick="event.preventDefault()" class="text-sm text-slate-500 hover:text-brand-400 transition-colors">Cookies</a></li>
+                        <li><a href="#" onclick="event.preventDefault()" class="text-sm text-slate-500 hover:text-brand-400 transition-colors">RGPD</a></li>
                     </ul>
                 </div>
             </div>
-            <div class="text-center text-sm text-gray-600">
-                &copy; 2026 PortTech Inc. Todos los derechos reservados.
+
+            <div class="border-t border-slate-800 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+                <p class="text-xs text-slate-600">© 2026 PortTech. Todos los derechos reservados.</p>
+                <div class="flex items-center gap-6">
+                    <p class="text-xs text-slate-600">Asignatura: Informática y Comercio Electrónico</p>
+                    <p class="text-xs text-slate-600">Docente: Claudia Alejandra Torres Vega</p>
+                </div>
+            </div>
+
+            <div class="mt-8 pt-8 border-t border-slate-800">
+                <p class="text-[10px] text-slate-700 uppercase tracking-widest mb-3 text-center">Equipo de desarrollo</p>
+                <div class="flex flex-wrap items-center justify-center gap-6">
+                    <span class="text-xs text-slate-500">Jesus Javier Sanchez Vanegas</span>
+                    <span class="text-slate-700">•</span>
+                    <span class="text-xs text-slate-500">Sebastian Perea Carballo</span>
+                    <span class="text-slate-700">•</span>
+                    
+                </div>
             </div>
         </div>
     </footer>
 
+    <!-- Back to top -->
+    <button id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})"
+        class="fixed bottom-6 left-6 w-12 h-12 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-slate-400 hover:text-brand-500 hover:border-brand-500/30 transition-all duration-300 opacity-0 translate-y-4 pointer-events-none z-50 shadow-lg">
+        <i data-lucide="arrow-up" class="w-5 h-5"></i>
+    </button>
+
+    <script>
+        lucide.createIcons();
+
+        // Navbar scroll
+        const navbar = document.getElementById('navbar');
+        const backToTop = document.getElementById('backToTop');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                navbar.classList.add('bg-white/90', 'backdrop-blur-xl', 'border-b', 'border-slate-200', 'shadow-sm');
+            } else {
+                navbar.classList.remove('bg-white/90', 'backdrop-blur-xl', 'border-b', 'border-slate-200', 'shadow-sm');
+            }
+            if (window.scrollY > 600) {
+                backToTop.classList.remove('opacity-0', 'translate-y-4', 'pointer-events-none');
+                backToTop.classList.add('opacity-100', 'translate-y-0');
+            } else {
+                backToTop.classList.add('opacity-0', 'translate-y-4', 'pointer-events-none');
+                backToTop.classList.remove('opacity-100', 'translate-y-0');
+            }
+        });
+
+        // Mobile menu
+        let mobileOpen = false;
+        function toggleMobile() {
+            mobileOpen = !mobileOpen;
+            document.getElementById('mobileMenu').classList.toggle('hidden');
+        }
+        function closeMobile() {
+            mobileOpen = false;
+            document.getElementById('mobileMenu').classList.add('hidden');
+        }
+
+        // Modals
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+            document.body.style.overflow = '';
+        }
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(overlay.id); });
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.active').forEach(m => closeModal(m.id));
+        });
+
+        // Password toggle
+        function togglePassword(inputId, btn) {
+            const input = document.getElementById(inputId);
+            const isPassword = input.type === 'password';
+            input.type = isPassword ? 'text' : 'password';
+            btn.innerHTML = isPassword ? '<i data-lucide="eye-off" class="w-4 h-4"></i>' : '<i data-lucide="eye" class="w-4 h-4"></i>';
+            lucide.createIcons();
+        }
+
+        // Form handlers
+        function handleLogin(e) { e.preventDefault(); closeModal('loginModal'); showToast('¡Bienvenido a PortWeb! Redirigiendo al dashboard...'); }
+        function handleRegister(e) { e.preventDefault(); closeModal('registerModal'); showToast('¡Cuenta creada exitosamente! Revisa tu email para verificar.'); }
+        function handleContact(e) { e.preventDefault(); e.target.reset(); showToast('¡Mensaje enviado! Te responderemos en menos de 24h.'); }
+
+        // Toast
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 4000);
+        }
+
+        // Plan selection
+        function selectPlan(plan) {
+            if (plan === 'Enterprise') { showToast('Un especialista de ventas se pondrá en contacto contigo.'); }
+            else { openModal('registerModal'); showToast(`Plan ${plan} seleccionado. Completa tu registro.`); }
+        }
+
+        // Billing toggle
+        let isMonthly = true;
+        function toggleBilling() {
+            isMonthly = !isMonthly;
+            const dot = document.getElementById('toggleDot');
+            const toggle = document.getElementById('billingToggle');
+            if (isMonthly) {
+                dot.style.transform = 'translateX(0)';
+                dot.classList.remove('bg-brand-500');
+                dot.classList.add('bg-white');
+                toggle.classList.remove('bg-brand-500');
+                toggle.classList.add('bg-slate-200');
+            } else {
+                dot.style.transform = 'translateX(28px)';
+                dot.classList.remove('bg-white');
+                dot.classList.add('bg-brand-500');
+                toggle.classList.remove('bg-slate-200');
+                toggle.classList.add('bg-brand-500');
+            }
+            document.querySelectorAll('.plan-price').forEach(el => {
+                el.textContent = isMonthly ? el.dataset.monthly : el.dataset.usage;
+            });
+            document.querySelectorAll('#planPro .plan-period').forEach(el => {
+                el.textContent = isMonthly ? '/mes' : '/turno';
+            });
+        }
+
+        // Blog filter
+        function filterBlog(category, btn) {
+            document.querySelectorAll('.tab-btn').forEach(t => { t.classList.remove('active'); t.classList.add('text-slate-500'); });
+            btn.classList.add('active'); btn.classList.remove('text-slate-500');
+            document.querySelectorAll('#blogGrid .blog-card').forEach(card => {
+                if (category === 'all' || card.dataset.category === category) {
+                    card.style.display = '';
+                    card.style.opacity = '0'; card.style.transform = 'translateY(20px)';
+                    setTimeout(() => { card.style.opacity = '1'; card.style.transform = 'translateY(0)'; card.style.transition = 'all 0.5s ease'; }, 50);
+                } else { card.style.display = 'none'; }
+            });
+        }
+
+        // Scroll reveal
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('active'); });
+        }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+        document.querySelectorAll('.reveal, .reveal-left, .reveal-right').forEach(el => revealObserver.observe(el));
+
+        // Counter animation
+        const counterObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const el = entry.target; const target = parseInt(el.dataset.target); let current = 0; const increment = target / 60;
+                    const timer = setInterval(() => { current += increment; if (current >= target) { current = target; clearInterval(timer); } el.textContent = Math.round(current); }, 25);
+                    counterObserver.unobserve(el);
+                }
+            });
+        }, { threshold: 0.5 });
+        document.querySelectorAll('.counter').forEach(c => counterObserver.observe(c));
+
+        // Active nav link
+        const sections = document.querySelectorAll('section[id]');
+        window.addEventListener('scroll', () => {
+            const scrollY = window.scrollY + 120;
+            sections.forEach(section => {
+                const top = section.offsetTop; const height = section.offsetHeight; const id = section.getAttribute('id');
+                const link = document.querySelector(`nav a[href="#${id}"]`);
+                if (link) {
+                    if (scrollY >= top && scrollY < top + height) { link.classList.add('text-brand-500', 'font-semibold'); link.classList.remove('text-slate-500'); }
+                    else { link.classList.remove('text-brand-500', 'font-semibold'); link.classList.add('text-slate-500'); }
+                }
+            });
+        });
+    </script>
 </body>
 </html>
